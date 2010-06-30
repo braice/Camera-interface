@@ -122,13 +122,14 @@ void *camera_thread_func(void* arg)
 	      continue;
 	    }
 	    /****************** Camera information getting ************/
-	    unsigned long sensorbits, sensorwidth,sensorheight;
+	    unsigned long sensorbits, sensorwidth,sensorheight, gainmin, gainmax;
 	    //ret=PvAttrStringGet(camera_params->camera_handler,"DeviceModelName",ModelName,100,NULL);
 	    PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&sensorbits);
 	    PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&sensorwidth); //todo : adjust the rolling buttons with these max values
 	    PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&sensorheight);
+	    PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
 	    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	    msg = g_strdup_printf ("Sensor information : %ldx%ld %ld bits",sensorwidth,sensorheight,sensorbits); //todo : put this in the camera info text
+	    msg = g_strdup_printf ("Sensor information : %ldx%ld %ld bits. Gain Min: %ld Max: %ld",sensorwidth,sensorheight,sensorbits,gainmin,gainmax); //todo : put this in the camera info text
 	    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
 	    g_free (msg);
 	    /********************* Camera INIT *******************/
@@ -156,11 +157,12 @@ void *camera_thread_func(void* arg)
 	    //We have a good camera handler, we set the camera as being connected
 	    camera_params->camera_connected=1;
 	    /********************* End of Camera INIT *******************/
-
           }
 	}
 	else
 	  usleep(500000); //some waiting 
+
+	//See snap example
 
       }
       usleep(500000); //some waiting 
