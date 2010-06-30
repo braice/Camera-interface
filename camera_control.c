@@ -26,6 +26,11 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+
+#include <PvApi.h>
+
+#define MAX_CAMERA_LIST 20
 
 void *camera_thread_func(void* arg)
 {
@@ -34,28 +39,78 @@ void *camera_thread_func(void* arg)
   struct timeval tv;
   long start_time;
 
+  tPvCameraInfo   cameraList[MAX_CAMERA_LIST];
+  unsigned long   cameraNum = 0;
+  unsigned long   cameraRle;
 
-
-
+  int ret;
   //We record the starting time
   gettimeofday (&tv, (struct timezone *) NULL);
   start_time = tv.tv_sec;
   
-  printf("Camera thread started\n");
+  g_print("Camera thread started\n");
+  if((ret=PvInitialize()))
+  {
+    g_warning("failed to initialise the Camera API. Error %d\n", ret);
+    return NULL;
+  }
 
   while(!camera_params->camera_thread_shutdown) 
   {
+    //We loop until the camera is connected and we asked for images
     while((!camera_params->camera_thread_shutdown)&&(!camera_params->grab_images || !camera_params->camera_connected ))
     {
+      //If the camera is not connected, we search for it
+      if(!camera_params->camera_connected )
+      {
+	// first, get list of reachable cameras.
+	cameraNum = PvCameraList(cameraList,MAX_CAMERA_LIST,NULL);
+
+	// keep how many cameras listed are reachable
+	cameraRle = cameraNum;
+
+	// then we append the list of unreachable cameras.
+        if (cameraNum < MAX_CAMERA_LIST)
+        {
+            cameraNum += PvCameraListUnreachable(&cameraList[cameraNum],
+                                                 MAX_CAMERA_LIST-cameraNum,
+                                                 NULL);
+        }
+
+
+	g_print("We detected %ld Reachable camera%c (%ld total)\n",cameraRle,cameraRle>1 ? 's':' ',cameraNum);
+	if(cameraNum)
+	{
+	  camera_params->camera_connected=1;
+	  struct in_addr addr;
+          tPvIpSettings Conf;
+          tPvErr lErr;
+            
+	  if((lErr = PvCameraIpSettingsGet(cameraList[0].UniqueId,&Conf)) == ePvErrSuccess)
+          {
+            addr.s_addr = Conf.CurrentIpAddress;
+	    g_print("First Camera\n");
+            g_print("%s - %8s - Unique ID = % 8ld IP@ = %15s [%s]\n",cameraList[0].SerialString,
+                                                                    cameraList[0].DisplayName,
+                                                                    cameraList[0].UniqueId,
+                                                                    inet_ntoa(addr),
+                                                                    cameraList[0].PermittedAccess & ePvAccessMaster ? "available" : "in use");
+          }
+	}
+	else
+	  usleep(500000); //some waiting 
+
+      }
       usleep(500000); //some waiting 
     }
 
   }
 
+  // uninit the API
+  PvUnInitialize();
   gettimeofday (&tv, (struct timezone *) NULL);
 
-  
-  printf("Camera thread stopped after %ld seconds\n", tv.tv_sec-start_time);
+  g_print("Camera thread stopped after %ld seconds\n", tv.tv_sec-start_time);
 
   return NULL;
 }

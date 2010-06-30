@@ -21,16 +21,8 @@
  *
  */
 
-/* For later
-
-
-
-
- */
-
 
  
-#include <gtk/gtk.h>
 #include <errno.h>
 #include "camera.h"
 
@@ -44,12 +36,46 @@ camera_parameters_t camera_params={
   .roi_hard_active = 0,
 };
 
+// MAIN IS AT THE END
+
+G_MODULE_EXPORT gboolean delete_event( GtkWidget *widget,
+                              GdkEvent  *event,
+                              gpointer   data )
+{
+  /* If you return FALSE in the "delete-event" signal handler,
+   * GTK will emit the "destroy" signal. Returning TRUE means
+   * you don't want the window to be destroyed.
+   * This is useful for popping up 'are you sure you want to quit?'
+   * type dialogs. */
+
+  g_print ("delete event occurred\n");
+   
+
+  /* Change TRUE to FALSE and the main window will be destroyed with
+   * a "delete-event". */
+
+  return FALSE;
+}
+
+
+/* Another callback */
+G_MODULE_EXPORT void destroy( GtkWidget *widget,
+                     gpointer   data )
+{
+
+  //We kill the camera thread
+  camera_params.camera_thread_shutdown=1;
+  pthread_join(camera_params.camera_thread, NULL);
+ 
+  gtk_main_quit ();
+}
+
+
 int
 main( int    argc,
       char **argv )
 {
     GtkBuilder *builder;
-    GtkWidget  *window;
     GError     *error = NULL;
     int ret;
     /* Init GTK+ */
@@ -66,9 +92,16 @@ main( int    argc,
         return( 1 );
     }
  
-    /* Get main window pointer from UI */
-    window = GTK_WIDGET( gtk_builder_get_object( builder, "window1" ) );
+    /* Allocate data structure */
+    camera_params.objects = g_slice_new( gui_objects_t );
+
  
+    /* Get objects from UI */
+#define GW( name ) CH_GET_WIDGET( builder, name, data )
+    GW( main_window );
+    GW( main_status_bar );
+#undef GW
+
     /* Connect signals */
     gtk_builder_connect_signals( builder, NULL );
  
@@ -76,7 +109,7 @@ main( int    argc,
     g_object_unref( G_OBJECT( builder ) );
  
     /* Show window. All other widgets are automatically shown by GtkBuilder */
-    gtk_widget_show( window );
+    gtk_widget_show( camera_params.objects->main_window );
 
     /* Start the camera thread */
     ret=pthread_create(&(camera_params.camera_thread), NULL, camera_thread_func, &camera_params);
@@ -88,38 +121,8 @@ main( int    argc,
     /* Start main loop */
     gtk_main();
 
+    /* Free any allocated data */
+    g_slice_free( gui_objects_t, camera_params.objects );
+
     return( 0 );
-}
-
-
-static gboolean delete_event( GtkWidget *widget,
-                              GdkEvent  *event,
-                              gpointer   data )
-{
-  /* If you return FALSE in the "delete-event" signal handler,
-   * GTK will emit the "destroy" signal. Returning TRUE means
-   * you don't want the window to be destroyed.
-   * This is useful for popping up 'are you sure you want to quit?'
-   * type dialogs. */
-
-  g_print ("delete event occurred\n");
-   
-
-  /* Change TRUE to FALSE and the main window will be destroyed with
-   * a "delete-event". */
-
-  return TRUE;
-}
-
-
-/* Another callback */
-static void destroy( GtkWidget *widget,
-                     gpointer   data )
-{
-
-  //We kill the camera thread
-  camera_params.camera_thread_shutdown=1;
-  pthread_join(camera_params.camera_thread, NULL);
- 
-  gtk_main_quit ();
 }

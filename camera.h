@@ -28,9 +28,20 @@
 
 // We have a thread for controlling the camera
 #include <pthread.h>
+#include <gtk/gtk.h>
 
 #define ETHERNET_PACKET_SIZE 1341
 
+/* Convenience macros for obtaining objects from UI file */
+#define CH_GET_OBJECT( builder, name, type, data ) \
+    camera_params.objects->name = type( gtk_builder_get_object( builder, #name ) )
+#define CH_GET_WIDGET( builder, name, data ) \
+    CH_GET_OBJECT( builder, name, GTK_WIDGET, data )
+
+typedef struct gui_objects_t{
+  GtkWidget *main_window;
+  GtkWidget *main_status_bar;
+}gui_objects_t;
 
 typedef struct camera_parameters_t{
   //Put this variable to 1 to shutdown the thread for the camera
@@ -50,7 +61,8 @@ typedef struct camera_parameters_t{
   int roi_hard_width;
   int roi_hard_y;
   int roi_hard_height;
-  
+  //The GUI objects
+  gui_objects_t *objects;
 }camera_parameters_t;
 
 
