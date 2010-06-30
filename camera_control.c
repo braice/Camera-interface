@@ -28,8 +28,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include <PvApi.h>
-
 #define MAX_CAMERA_LIST 20
 
 void *camera_thread_func(void* arg)
@@ -44,6 +42,7 @@ void *camera_thread_func(void* arg)
   unsigned long   cameraRle;
 
   int ret;
+  gchar *msg;
   //We record the starting time
   gettimeofday (&tv, (struct timezone *) NULL);
   start_time = tv.tv_sec;
@@ -51,6 +50,12 @@ void *camera_thread_func(void* arg)
   g_print("Camera thread started\n");
   if((ret=PvInitialize()))
   {
+    g_warning("failed to initialise the Camera API. Error %d\n", ret);
+    msg = g_strdup_printf ("Failed to initialise the Camera API. Error %d", ret);
+    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+    g_free (msg);
+
     g_warning("failed to initialise the Camera API. Error %d\n", ret);
     return NULL;
   }
@@ -71,17 +76,12 @@ void *camera_thread_func(void* arg)
 
 	// then we append the list of unreachable cameras.
         if (cameraNum < MAX_CAMERA_LIST)
-        {
-            cameraNum += PvCameraListUnreachable(&cameraList[cameraNum],
-                                                 MAX_CAMERA_LIST-cameraNum,
-                                                 NULL);
-        }
+            cameraNum += PvCameraListUnreachable(&cameraList[cameraNum], MAX_CAMERA_LIST-cameraNum, NULL);
 
 
 	g_print("We detected %ld Reachable camera%c (%ld total)\n",cameraRle,cameraRle>1 ? 's':' ',cameraNum);
 	if(cameraNum)
 	{
-	  camera_params->camera_connected=1;
 	  struct in_addr addr;
           tPvIpSettings Conf;
           tPvErr lErr;
@@ -95,6 +95,41 @@ void *camera_thread_func(void* arg)
                                                                     cameraList[0].UniqueId,
                                                                     inet_ntoa(addr),
                                                                     cameraList[0].PermittedAccess & ePvAccessMaster ? "available" : "in use");
+	    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+	    msg = g_strdup_printf ("Camera found : %s", cameraList[0].DisplayName);
+	    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+	    g_free (msg);
+	    //We open the handler for the camera
+	    ret=PvCameraOpen(cameraList[0].UniqueId,ePvAccessMaster,&camera_params->camera_handler);
+	    if(ret!=ePvErrSuccess)
+	    {
+	      g_warning("Error while opening the camera : %d",ret);
+	      gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+	      switch(ret)
+	      {
+	        case ePvErrAccessDenied:
+	          msg = g_strdup_printf ("Camera error : Access denied (another apliation is using it ?)");
+	          break;
+	        case ePvErrNotFound:
+	          msg = g_strdup_printf ("Camera error : Camera not found (camera unplugged ?)");
+	          break;
+  	        default:
+	          msg = g_strdup_printf ("Camera error : Unknown error");
+	      }
+	      gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+	      g_free (msg);
+	      usleep(1000000); //some waiting 
+	      continue;
+	    }
+	    camera_params->camera_connected=1;
+	    //Now we adjust the packet size
+	    if(!PvCaptureAdjustPacketSize(camera_params->camera_handler,9000))
+	      {
+		unsigned long Size;
+		PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);   
+		printf("the best packet size is %lu bytes\n",Size);
+	      }
+
           }
 	}
 	else
@@ -106,6 +141,8 @@ void *camera_thread_func(void* arg)
 
   }
 
+  if(camera_params->camera_connected)
+    PvCameraClose(camera_params->camera_handler);
   // uninit the API
   PvUnInitialize();
   gettimeofday (&tv, (struct timezone *) NULL);

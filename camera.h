@@ -29,6 +29,8 @@
 // We have a thread for controlling the camera
 #include <pthread.h>
 #include <gtk/gtk.h>
+#include <PvApi.h>
+#include <PvRegIo.h>
 
 #define ETHERNET_PACKET_SIZE 1341
 
@@ -44,6 +46,8 @@ typedef struct gui_objects_t{
 }gui_objects_t;
 
 typedef struct camera_parameters_t{
+  //Camera handler
+  tPvHandle camera_handler;
   //Put this variable to 1 to shutdown the thread for the camera
   int camera_thread_shutdown;
   pthread_t camera_thread;
