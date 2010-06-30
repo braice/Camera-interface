@@ -121,14 +121,41 @@ void *camera_thread_func(void* arg)
 	      usleep(1000000); //some waiting 
 	      continue;
 	    }
-	    camera_params->camera_connected=1;
+	    /****************** Camera information getting ************/
+	    unsigned long sensorbits, sensorwidth,sensorheight;
+	    //ret=PvAttrStringGet(camera_params->camera_handler,"DeviceModelName",ModelName,100,NULL);
+	    PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&sensorbits);
+	    PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&sensorwidth); //todo : adjust the rolling buttons with these max values
+	    PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&sensorheight);
+	    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+	    msg = g_strdup_printf ("Sensor information : %ldx%ld %ld bits",sensorwidth,sensorheight,sensorbits); //todo : put this in the camera info text
+	    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+	    g_free (msg);
+	    /********************* Camera INIT *******************/
 	    //Now we adjust the packet size
 	    if(!PvCaptureAdjustPacketSize(camera_params->camera_handler,9000))
 	      {
 		unsigned long Size;
 		PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);   
-		printf("the best packet size is %lu bytes\n",Size);
+		g_print("the best packet size is %lu bytes\n",Size);
 	      }
+	    //We set the gain to manual
+	    if(PvAttrStringSet(camera_params->camera_handler,"GainMode","Manual"))
+	      g_print("Error while setting the gain mode\n");
+	    //Default gain 0
+	    PvAttrUint32Set(camera_params->camera_handler,"GainValue",0); //note, get the value of the spinbutton / reset this values when grabbing is selected
+	    //Exposure mode manual
+	    if(PvAttrStringSet(camera_params->camera_handler,"ExposureMode","Manual"))
+	      g_print("Error while setting the exposure mode\n");
+	    //Default Exposure 100ms
+	    PvAttrUint32Set(camera_params->camera_handler,"ExposureValue",100000);
+	    //PixelFormat Monochrome 16 bits
+	    if(PvAttrStringSet(camera_params->camera_handler,"PixelFormat","Mono16"))
+	      g_print("Error while setting the PixelFormat\n");
+
+	    //We have a good camera handler, we set the camera as being connected
+	    camera_params->camera_connected=1;
+	    /********************* End of Camera INIT *******************/
 
           }
 	}
