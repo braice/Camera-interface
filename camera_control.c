@@ -30,6 +30,31 @@
 
 #define MAX_CAMERA_LIST 20
 
+void camera_update_roi(camera_parameters_t* camera_params)
+{
+  g_print("update ROI");
+  if(camera_params->roi_hard_active)
+  {
+    PvAttrUint32Set(camera_params->camera_handler,"Height",camera_params->roi_hard_height);
+    PvAttrUint32Set(camera_params->camera_handler,"RegionX",camera_params->roi_hard_x);
+    PvAttrUint32Set(camera_params->camera_handler,"RegionY",camera_params->roi_hard_y);
+    PvAttrUint32Set(camera_params->camera_handler,"Width",camera_params->roi_hard_width);
+  }
+  else
+  {
+    unsigned long min,max;
+    PvAttrRangeUint32(camera_params->camera_handler,"Height",&min,&max);
+    PvAttrUint32Set(camera_params->camera_handler,"Height",max);
+    PvAttrRangeUint32(camera_params->camera_handler,"RegionX",&min,&max);
+    PvAttrUint32Set(camera_params->camera_handler,"RegionX",min);
+    PvAttrRangeUint32(camera_params->camera_handler,"RegionY",&min,&max);
+    PvAttrUint32Set(camera_params->camera_handler,"RegionY",min);
+    PvAttrRangeUint32(camera_params->camera_handler,"Width",&min,&max);
+    PvAttrUint32Set(camera_params->camera_handler,"Width",max);
+  }
+}
+
+
 void *camera_thread_func(void* arg)
 {
   camera_parameters_t *camera_params;
@@ -96,7 +121,7 @@ void *camera_thread_func(void* arg)
                                                                     inet_ntoa(addr),
                                                                     cameraList[0].PermittedAccess & ePvAccessMaster ? "available" : "in use");
 	    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	    msg = g_strdup_printf ("Camera found : %s", cameraList[0].DisplayName);
+	    msg = g_strdup_printf ("Camera : %s", cameraList[0].DisplayName);
 	    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
 	    g_free (msg);
 	    //We open the handler for the camera
@@ -122,24 +147,69 @@ void *camera_thread_func(void* arg)
 	      continue;
 	    }
 	    /****************** Camera information getting ************/
-	    unsigned long sensorbits, sensorwidth,sensorheight, gainmin, gainmax;
+	    unsigned long sensorbits, sensorwidth,sensorheight, gainmin, gainmax, time_min, time_max,min,max;
 	    //ret=PvAttrStringGet(camera_params->camera_handler,"DeviceModelName",ModelName,100,NULL);
 	    PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&sensorbits);
-	    PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&sensorwidth); //todo : adjust the rolling buttons with these max values
+	    PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&sensorwidth);
 	    PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&sensorheight);
 	    PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
-	    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	    msg = g_strdup_printf ("Sensor information : %ldx%ld %ld bits. Gain Min: %ld Max: %ld",sensorwidth,sensorheight,sensorbits,gainmin,gainmax); //todo : put this in the camera info text
-	    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+	    PvAttrRangeUint32(camera_params->camera_handler,"ExposureValue",&time_min,&time_max);
+	    //We write the info in the text buffer
+	    msg = g_strdup_printf ("Camera : %s\nSensor %ldx%ld %ld bits\nGain %lddB to %lddB", cameraList[0].DisplayName,sensorwidth,sensorheight,sensorbits,gainmin,gainmax);
+	    gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
 	    g_free (msg);
+	    //we set the min/max for the adjustments
+	    gtk_adjustment_set_lower(camera_params->objects->Exp_adj_gain,gainmin);
+	    gtk_adjustment_set_upper(camera_params->objects->Exp_adj_gain,gainmax);
+	    gtk_adjustment_set_value(camera_params->objects->Exp_adj_gain,gainmin);
+	    gtk_adjustment_set_lower(camera_params->objects->Exp_adj_time,time_min/1000);
+	    gtk_adjustment_set_upper(camera_params->objects->Exp_adj_time,time_max/1000);
+	    gtk_adjustment_set_value(camera_params->objects->Exp_adj_time,time_min/1000);
+	    PvAttrRangeUint32(camera_params->camera_handler,"Height",&min,&max);
+	    gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_height,min);
+	    gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_height,max);
+	    gtk_adjustment_set_value(camera_params->objects->ROI_adjust_height,max);
+	    PvAttrRangeUint32(camera_params->camera_handler,"RegionX",&min,&max);
+	    gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_x,min);
+	    gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_x,max);
+	    gtk_adjustment_set_value(camera_params->objects->ROI_adjust_x,min);
+	    PvAttrRangeUint32(camera_params->camera_handler,"RegionY",&min,&max);
+	    gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_y,min);
+	    gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_y,max);
+	    gtk_adjustment_set_value(camera_params->objects->ROI_adjust_y,min);
+	    PvAttrRangeUint32(camera_params->camera_handler,"Width",&min,&max);
+	    gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_width,min);
+	    gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_width,max);
+	    gtk_adjustment_set_value(camera_params->objects->ROI_adjust_width,max);
+	    PvAttrRangeUint32(camera_params->camera_handler,"BinningX",&min,&max);
+	    gtk_adjustment_set_lower(camera_params->objects->Bin_X_adj,min);
+	    gtk_adjustment_set_upper(camera_params->objects->Bin_X_adj,max);
+	    gtk_adjustment_set_value(camera_params->objects->Bin_X_adj,min);
+	    PvAttrRangeUint32(camera_params->camera_handler,"BinningY",&min,&max);
+	    gtk_adjustment_set_lower(camera_params->objects->Bin_Y_adj,min);
+	    gtk_adjustment_set_upper(camera_params->objects->Bin_Y_adj,max);
+	    gtk_adjustment_set_value(camera_params->objects->Bin_Y_adj,min);
+	    PvAttrRangeUint32(camera_params->camera_handler,"StreamBytesPerSecond",&min,&max);
+	    gtk_adjustment_set_lower(camera_params->objects->Bytes_per_sec_adj,min);
+            gtk_adjustment_set_upper(camera_params->objects->Bytes_per_sec_adj,max);
+	    if((min<12000000) && (12000000<max))
+	      gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,12000000);
+	    else
+	      gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,min);
 	    /********************* Camera INIT *******************/
 	    //Now we adjust the packet size
 	    if(!PvCaptureAdjustPacketSize(camera_params->camera_handler,9000))
 	      {
 		unsigned long Size;
 		PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);   
-		g_print("the best packet size is %lu bytes\n",Size);
+		msg = g_strdup_printf ("\nPacket size: %lu",Size);
+		gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
+		g_free (msg);
+
 	      }
+	    //We adjudst the bandwith control mode
+	    if(PvAttrStringSet(camera_params->camera_handler,"BandwidthCtrlMode","StreamBytesPerSecond"))
+	      g_print("Error while setting the Bandwidth control mode\n");
 	    //We set the gain to manual
 	    if(PvAttrStringSet(camera_params->camera_handler,"GainMode","Manual"))
 	      g_print("Error while setting the gain mode\n");
@@ -169,6 +239,7 @@ void *camera_thread_func(void* arg)
     }
 
   }
+
 
   if(camera_params->camera_connected)
     PvCameraClose(camera_params->camera_handler);

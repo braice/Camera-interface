@@ -39,10 +39,22 @@
     camera_params.objects->name = type( gtk_builder_get_object( builder, #name ) )
 #define CH_GET_WIDGET( builder, name, data ) \
     CH_GET_OBJECT( builder, name, GTK_WIDGET, data )
+#define CH_GET_ADJUSTMENT( builder, name, data ) \
+    CH_GET_OBJECT( builder, name, GTK_ADJUSTMENT, data )
 
 typedef struct gui_objects_t{
   GtkWidget *main_window;
   GtkWidget *main_status_bar;
+  GtkWidget *camera_text;
+  GtkAdjustment *Exp_adj_gain;
+  GtkAdjustment *Exp_adj_time;
+  GtkAdjustment *ROI_adjust_x;
+  GtkAdjustment *ROI_adjust_y;
+  GtkAdjustment *ROI_adjust_width;
+  GtkAdjustment *ROI_adjust_height;
+  GtkAdjustment *Bin_X_adj;
+  GtkAdjustment *Bin_Y_adj;
+  GtkAdjustment *Bytes_per_sec_adj;
 }gui_objects_t;
 
 typedef struct camera_parameters_t{
@@ -65,12 +77,16 @@ typedef struct camera_parameters_t{
   int roi_hard_width;
   int roi_hard_y;
   int roi_hard_height;
+  //Binning
+  int binning_x;
+  int binning_y;
   //The GUI objects
   gui_objects_t *objects;
 }camera_parameters_t;
 
 
 void *camera_thread_func(void* arg);
+void camera_update_roi(camera_parameters_t* );
 
 
 #endif

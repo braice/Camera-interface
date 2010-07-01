@@ -38,7 +38,7 @@ camera_parameters_t camera_params={
 
 // MAIN IS AT THE END
 
-G_MODULE_EXPORT gboolean delete_event( GtkWidget *widget,
+G_MODULE_EXPORT gboolean cb_delete_event( GtkWidget *widget,
                               GdkEvent  *event,
                               gpointer   data )
 {
@@ -59,16 +59,63 @@ G_MODULE_EXPORT gboolean delete_event( GtkWidget *widget,
 
 
 /* Another callback */
-G_MODULE_EXPORT void destroy( GtkWidget *widget,
+G_MODULE_EXPORT void cb_destroy( GtkWidget *widget,
                      gpointer   data )
 {
 
+  g_print ("destroy event occurred shutting down the thread\n");
   //We kill the camera thread
   camera_params.camera_thread_shutdown=1;
   pthread_join(camera_params.camera_thread, NULL);
  
   gtk_main_quit ();
 }
+
+
+//Callback for the ROI values changed
+G_MODULE_EXPORT void cb_ROI_changed( GtkEditable *editable, gpointer   data )
+{
+
+  camera_params.roi_hard_x=(int)gtk_adjustment_get_value(camera_params.objects->ROI_adjust_x);
+  camera_params.roi_hard_y=(int)gtk_adjustment_get_value(camera_params.objects->ROI_adjust_y);
+  camera_params.roi_hard_width=(int)gtk_adjustment_get_value(camera_params.objects->ROI_adjust_width);
+  camera_params.roi_hard_height=(int)gtk_adjustment_get_value(camera_params.objects->ROI_adjust_height);
+  if(camera_params.roi_hard_active)
+    camera_update_roi(&camera_params);
+}
+
+//Callback for the ROI button is toggled
+G_MODULE_EXPORT void cb_ROI_toggled(GtkToggleButton *togglebutton,gpointer   data )
+{
+
+  if(gtk_toggle_button_get_active(togglebutton)==TRUE)
+    camera_params.roi_hard_active=1;
+  else
+    camera_params.roi_hard_active=0;
+
+  camera_update_roi(&camera_params);
+}
+
+
+//Callback for the bytespersecond values changed
+G_MODULE_EXPORT void cb_BytesPerSecond_changed( GtkEditable *editable, gpointer   data )
+{
+  //We set the new value on the camera
+  PvAttrUint32Set(camera_params.camera_handler,"StreamBytesPerSecond",(int)gtk_adjustment_get_value(camera_params.objects->Bytes_per_sec_adj));
+}
+
+
+//Callback for the bytespersecond values changed
+G_MODULE_EXPORT void cb_Binning_changed( GtkEditable *editable, gpointer   data )
+{
+
+  camera_params.binning_x=(int)gtk_adjustment_get_value(camera_params.objects->Bin_X_adj);
+  camera_params.binning_y=(int)gtk_adjustment_get_value(camera_params.objects->Bin_Y_adj);
+  PvAttrUint32Set(camera_params.camera_handler,"BinningX",camera_params.binning_x);
+  PvAttrUint32Set(camera_params.camera_handler,"BinningY",camera_params.binning_y);
+}
+
+
 
 
 int
@@ -100,7 +147,21 @@ main( int    argc,
 #define GW( name ) CH_GET_WIDGET( builder, name, data )
     GW( main_window );
     GW( main_status_bar );
+    GW( camera_text );
 #undef GW
+    /* Get adjustments objects from UI */
+#define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
+    GA( Exp_adj_gain );
+    GA( Exp_adj_time );
+    GA( ROI_adjust_x );
+    GA( ROI_adjust_y );
+    GA( ROI_adjust_width );
+    GA( ROI_adjust_height );
+    GA( Bin_X_adj );
+    GA( Bin_Y_adj );
+    GA( Bytes_per_sec_adj );
+#undef GA
+
 
     /* Connect signals */
     gtk_builder_connect_signals( builder, NULL );
