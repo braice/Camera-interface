@@ -115,7 +115,30 @@ G_MODULE_EXPORT void cb_Binning_changed( GtkEditable *editable, gpointer   data 
   PvAttrUint32Set(camera_params.camera_handler,"BinningY",camera_params.binning_y);
 }
 
+//Callback for the bytespersecond values changed
+G_MODULE_EXPORT void cb_Eposure_changed( GtkEditable *editable, gpointer   data )
+{
 
+   //Set the exposure time
+  PvAttrUint32Set(camera_params.camera_handler,"ExposureValue",(int)gtk_adjustment_get_value(camera_params.objects->Exp_adj_time)*1000);
+  //Set the gain
+  PvAttrUint32Set(camera_params.camera_handler,"GainValue",(int)gtk_adjustment_get_value(camera_params.objects->Exp_adj_gain));
+}
+
+//Callback for the ROI button is toggled
+G_MODULE_EXPORT void cb_Acquire_toggled(GtkToggleButton *togglebutton,gpointer   data )
+{
+
+  g_print("cb_Acquire_toggled\n");
+
+  if(gtk_toggle_button_get_active(togglebutton)==TRUE)
+    camera_params.grab_images=1;
+  else
+    camera_params.grab_images=0;
+
+  
+
+}
 
 
 int
@@ -125,6 +148,15 @@ main( int    argc,
     GtkBuilder *builder;
     GError     *error = NULL;
     int ret;
+
+    /* We are using a threaded program we must say it to gtk */
+    if( ! g_thread_supported() )
+      g_thread_init(NULL);
+    gdk_threads_init();
+
+    /* Obtain gtk's global lock */
+    gdk_threads_enter();
+
     /* Init GTK+ */
     gtk_init( &argc, &argv );
  
@@ -148,6 +180,7 @@ main( int    argc,
     GW( main_window );
     GW( main_status_bar );
     GW( camera_text );
+    GW( raw_image );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -182,8 +215,16 @@ main( int    argc,
     /* Start main loop */
     gtk_main();
 
+    /* Release gtk's global lock */
+    gdk_threads_leave();
+
+    /* We derease the pixbuf reference counter */
+    if(camera_params.raw_image_pixbuff!=NULL)
+      g_object_unref(camera_params.raw_image_pixbuff);
+
     /* Free any allocated data */
     g_slice_free( gui_objects_t, camera_params.objects );
+
 
     return( 0 );
 }

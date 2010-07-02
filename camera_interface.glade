@@ -273,6 +273,7 @@
                                 <property name="adjustment">Exp_adj_gain</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_Eposure_changed"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -301,6 +302,7 @@
                                 <property name="climb_rate">0.5</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_Eposure_changed"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -457,6 +459,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <signal name="toggled" handler="cb_Acquire_toggled"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>

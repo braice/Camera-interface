@@ -33,6 +33,7 @@
 #include <PvRegIo.h>
 
 #define ETHERNET_PACKET_SIZE 1341
+#define FRAME_WAIT_TIMEOUT 100
 
 /* Convenience macros for obtaining objects from UI file */
 #define CH_GET_OBJECT( builder, name, type, data ) \
@@ -46,6 +47,7 @@ typedef struct gui_objects_t{
   GtkWidget *main_window;
   GtkWidget *main_status_bar;
   GtkWidget *camera_text;
+  GtkWidget *raw_image;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -60,6 +62,13 @@ typedef struct gui_objects_t{
 typedef struct camera_parameters_t{
   //Camera handler
   tPvHandle camera_handler;
+  tPvFrame camera_frame;
+  //PixBuff
+  GdkPixbuf *raw_image_pixbuff; 
+  //sensor info
+  unsigned long sensorbits;
+  unsigned long sensorwidth;
+  unsigned long sensorheight;
   //Put this variable to 1 to shutdown the thread for the camera
   int camera_thread_shutdown;
   pthread_t camera_thread;
@@ -68,6 +77,7 @@ typedef struct camera_parameters_t{
   int image_number;
   //Are we grabbing images ?
   int grab_images;
+  int grabbing_images;
   //Exposure information
   int exp_time; //time in milliseconds
   int exp_gain; //camera gain
