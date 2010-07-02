@@ -65,12 +65,10 @@ void camera_stop_grabbing(camera_parameters_t* camera_params)
   free(camera_params->camera_frame.ImageBuffer);
   camera_params->grabbing_images=0;
   gchar *msg; 
-  gdk_threads_enter();
   gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
   msg = g_strdup_printf ("Acquisition Stopped");
   gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
   g_free (msg);
-  gdk_threads_leave();
 
 }
 
