@@ -27,6 +27,7 @@
 #include "camera.h"
 
 camera_parameters_t camera_params={
+  .image_number = 0,
   .camera_thread_shutdown = 0,
   .camera_connected = 0,
   .image_number = 0,
@@ -141,6 +142,29 @@ G_MODULE_EXPORT void cb_Acquire_toggled(GtkToggleButton *togglebutton,gpointer  
 }
 
 
+//Callback when the user click on the image
+G_MODULE_EXPORT void cb_Image_button_pressed(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+  g_print("Th\n");
+  if(event->type==GDK_BUTTON_PRESS)
+  {
+    g_print("The image has been clicked at %f %f\n",event->x,event->y);
+  }
+
+}
+
+//Callback when the user click on the image
+G_MODULE_EXPORT void cb_Image_button_released(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+  g_print("Th\n");
+  if(event->type==GDK_BUTTON_RELEASE)
+  {
+    g_print("The image has been released at %f %f\n",event->x,event->y);
+  }
+
+}
+
+
 int
 main( int    argc,
       char **argv )
@@ -180,6 +204,7 @@ main( int    argc,
     GW( main_window );
     GW( main_status_bar );
     GW( camera_text );
+    GW( image_number );
     GW( raw_image );
 #undef GW
     /* Get adjustments objects from UI */

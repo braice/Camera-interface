@@ -3,6 +3,7 @@
   <requires lib="gtk+" version="2.16"/>
   <!-- interface-naming-policy project-wide -->
   <object class="GtkWindow" id="main_window">
+    <property name="events">GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
     <property name="default_width">700</property>
     <property name="default_height">500</property>
     <signal name="destroy" handler="cb_destroy"/>
@@ -11,10 +12,12 @@
     <child>
       <object class="GtkVBox" id="vbox2">
         <property name="visible">True</property>
+        <property name="events">GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
         <property name="orientation">vertical</property>
         <child>
           <object class="GtkHBox" id="hbox1">
             <property name="visible">True</property>
+            <property name="events">GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
             <child>
               <object class="GtkVBox" id="vbox3">
                 <property name="visible">True</property>
@@ -397,7 +400,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkExpander" id="expander1">
+                      <object class="GtkExpander" id="net_expander">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <child>
@@ -500,19 +503,12 @@
               <object class="GtkNotebook" id="notebook1">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="events">GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
                 <child>
                   <object class="GtkVBox" id="vbox8">
                     <property name="visible">True</property>
+                    <property name="events">GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
                     <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkImage" id="raw_image">
-                        <property name="visible">True</property>
-                        <property name="stock">gtk-missing-image</property>
-                      </object>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
                     <child>
                       <object class="GtkHBox" id="hbox2">
                         <property name="visible">True</property>
@@ -539,18 +535,43 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkStatusbar" id="image_statusbar">
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <object class="GtkTextView" id="image_number">
                             <property name="visible">True</property>
-                            <property name="spacing">2</property>
-                            <property name="has_resize_grip">False</property>
+                            <property name="can_focus">True</property>
+                            <property name="pixels_above_lines">5</property>
+                            <property name="pixels_below_lines">5</property>
+                            <property name="editable">False</property>
+                            <property name="left_margin">5</property>
+                            <property name="right_margin">5</property>
+                            <property name="cursor_visible">False</property>
                           </object>
                           <packing>
-                            <property name="position">1</property>
+                            <property name="expand">False</property>
+                            <property name="position">3</property>
                           </packing>
                         </child>
                       </object>
                       <packing>
                         <property name="expand">False</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkImage" id="raw_image">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="events">GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
+                        <property name="stock">gtk-missing-image</property>
+                        <signal name="button_press_event" handler="cb_Image_button_pressed"/>
+                        <signal name="button_release_event" handler="cb_Image_button_released"/>
+                      </object>
+                      <packing>
                         <property name="position">1</property>
                       </packing>
                     </child>

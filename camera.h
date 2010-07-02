@@ -47,6 +47,7 @@ typedef struct gui_objects_t{
   GtkWidget *main_window;
   GtkWidget *main_status_bar;
   GtkWidget *camera_text;
+  GtkWidget *image_number;
   GtkWidget *raw_image;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
@@ -74,7 +75,7 @@ typedef struct camera_parameters_t{
   pthread_t camera_thread;
   int camera_connected;
   //The image number
-  int image_number;
+  long int image_number;
   //Are we grabbing images ?
   int grab_images;
   int grabbing_images;

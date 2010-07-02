@@ -109,9 +109,14 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
 
 void camera_new_image(camera_parameters_t* camera_params)
 {
+  gchar *msg;
 
   gdk_threads_enter();
-  g_print("New Image\n");
+  camera_params->image_number++;
+  msg = g_strdup_printf ("%ld", camera_params->image_number);
+  gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->image_number)),msg,-1);
+  g_free (msg);
+
   //note : in case of redim, unref the pixbuf, create a new one and associate it with the image
   //todo check the size of the pixbuf versus the size of the camera buffer
   //If we didn't set a pixbuf yet, we do it
