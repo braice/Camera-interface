@@ -98,6 +98,8 @@ typedef struct camera_parameters_t{
 
 void *camera_thread_func(void* arg);
 void camera_update_roi(camera_parameters_t* );
+void camera_set_exposure(camera_parameters_t* camera_params);
+void camera_set_triggering(camera_parameters_t* camera_params);
 
 
 #endif

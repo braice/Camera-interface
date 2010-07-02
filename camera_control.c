@@ -72,19 +72,28 @@ void camera_stop_grabbing(camera_parameters_t* camera_params)
 
 }
 
-
-void camera_start_grabbing(camera_parameters_t* camera_params)
+void camera_set_triggering(camera_parameters_t* camera_params)
 {
-  g_print("camera_start_grabbing\n");
-  
+  PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "Continuous"); //SingleFrame MultiFrame 
+  PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","Freerun");
+  //AcquisitionFrameCount
+}
+
+void camera_set_exposure(camera_parameters_t* camera_params)
+{
   //Set the exposure time
   PvAttrUint32Set(camera_params->camera_handler,"ExposureValue",(int)gtk_adjustment_get_value(camera_params->objects->Exp_adj_time)*1000);
   //Set the gain
   PvAttrUint32Set(camera_params->camera_handler,"GainValue",(int)gtk_adjustment_get_value(camera_params->objects->Exp_adj_gain));
-  
+
+}
+
+void camera_start_grabbing(camera_parameters_t* camera_params)
+{
+  g_print("camera_start_grabbing\n");
+  camera_set_exposure(camera_params);
+  camera_set_triggering(camera_params);
   PvCaptureStart(camera_params->camera_handler);
-  PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "Continuous");
-  PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","Freerun");
 
   //We initialize the frame buffer
   int imageSize;
@@ -363,7 +372,7 @@ void *camera_thread_func(void* arg)
       if((ret==ePvErrSuccess)&&(camera_params->camera_frame.Status!=ePvErrSuccess))
       {
 	//Error on the frame, we restart the Grabbing
-	g_print("Frame error");
+	g_print("Frame error\n");
 	camera_stop_grabbing(camera_params);
 	camera_start_grabbing(camera_params);
       }

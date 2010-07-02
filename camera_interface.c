@@ -119,11 +119,7 @@ G_MODULE_EXPORT void cb_Binning_changed( GtkEditable *editable, gpointer   data 
 //Callback for the bytespersecond values changed
 G_MODULE_EXPORT void cb_Eposure_changed( GtkEditable *editable, gpointer   data )
 {
-
-   //Set the exposure time
-  PvAttrUint32Set(camera_params.camera_handler,"ExposureValue",(int)gtk_adjustment_get_value(camera_params.objects->Exp_adj_time)*1000);
-  //Set the gain
-  PvAttrUint32Set(camera_params.camera_handler,"GainValue",(int)gtk_adjustment_get_value(camera_params.objects->Exp_adj_gain));
+  camera_set_exposure(&camera_params);
 }
 
 //Callback for the ROI button is toggled
