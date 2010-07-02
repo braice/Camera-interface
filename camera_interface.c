@@ -133,8 +133,17 @@ G_MODULE_EXPORT void cb_Acquire_toggled(GtkToggleButton *togglebutton,gpointer  
   else
     camera_params.grab_images=0;
 
-  
+}
 
+//Triggering callbacks
+G_MODULE_EXPORT void cb_trig_toggled(GtkToggleButton *togglebutton,gpointer   data )
+{
+  camera_set_triggering(&camera_params);
+}
+
+G_MODULE_EXPORT void cb_trig_nbframes_changed( GtkEditable *editable, gpointer   data )
+{
+  camera_set_triggering(&camera_params);
 }
 
 
@@ -202,6 +211,10 @@ main( int    argc,
     GW( camera_text );
     GW( image_number );
     GW( raw_image );
+    GW( ext_trig );
+    GW( trig_mult );
+    GW( trig_single );
+    GW( trig_cont );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -214,6 +227,7 @@ main( int    argc,
     GA( Bin_X_adj );
     GA( Bin_Y_adj );
     GA( Bytes_per_sec_adj );
+    GA( Trig_nbframes_adj);
 #undef GA
 
 

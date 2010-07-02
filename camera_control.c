@@ -74,9 +74,33 @@ void camera_stop_grabbing(camera_parameters_t* camera_params)
 
 void camera_set_triggering(camera_parameters_t* camera_params)
 {
-  PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "Continuous"); //SingleFrame MultiFrame 
-  PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","Freerun");
-  //AcquisitionFrameCount
+  
+  //We set the trigger soure
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->ext_trig))==TRUE)
+  {
+    PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","SyncIn1");
+    PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerEvent","EdgeRising");
+  }
+  else
+    PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","Freerun");
+
+
+  //We set the framecount/acquisition mode
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->trig_cont))==TRUE)
+    PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "Continuous");
+  else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->trig_single))==TRUE)
+    PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "SingleFrame");
+  else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->trig_mult))==TRUE)
+  {
+    PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "MultiFrame");
+    PvAttrUint32Set(camera_params->camera_handler,"AcquisitionFrameCount",(int)gtk_adjustment_get_value(camera_params->objects->Trig_nbframes_adj));
+  }
+  else
+  {
+    g_warning("bug in the trigger bak to continuous\n");
+    PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "Continuous");
+  }
+
 }
 
 void camera_set_exposure(camera_parameters_t* camera_params)
@@ -313,6 +337,10 @@ void *camera_thread_func(void* arg)
 	      gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,12000000);
 	    else
 	      gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,min);
+	    PvAttrRangeUint32(camera_params->camera_handler,"AcquisitionFrameCount",&min,&max);
+	    gtk_adjustment_set_lower(camera_params->objects->Trig_nbframes_adj,min);
+	    gtk_adjustment_set_upper(camera_params->objects->Trig_nbframes_adj,max);
+	    gtk_adjustment_set_value(camera_params->objects->Trig_nbframes_adj,min);
 	    /********************* Camera INIT *******************/
 	    //Now we adjust the packet size
 	    if(!PvCaptureAdjustPacketSize(camera_params->camera_handler,9000))
