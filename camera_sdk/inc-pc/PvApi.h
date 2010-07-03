@@ -80,6 +80,7 @@
 | 09/Jul/07     Added error code ePvErrFirewall
 | 17/Aug/07     Added new pixel formats
 | 26/Feb/09     Release 1.22
+| 05/Apr/10     Added support for int64 and boolean attributes
 |==============================================================================
 */
 
@@ -408,13 +409,17 @@ typedef void (PVDECL *tPvFrameCallback)(tPvFrame* Frame);
 
 
 #if defined(_M_IX86) || defined(_x86) || defined(_WIN64) || defined(_x64)
+typedef long            tPvInt32;   // 32-bit signed integer
+typedef unsigned long   tPvUint32;  // 32-bit unsigned integer
+typedef float           tPvFloat32; // IEEE 32-bit float
+typedef long long       tPvInt64;   // 64-bit signed integer
+typedef unsigned char   tPvBoolean; // boolean
+#elif defined(_ppc) || defined(_arm) || defined(_msa)
 typedef long            tPvInt32;   // 32-bit integer
 typedef unsigned long   tPvUint32;  // 32-bit unsigned integer
 typedef float           tPvFloat32; // IEEE 32-bit float
-#elif defined(_ppc) || defined(_arm)
-typedef long            tPvInt32;   // 32-bit integer
-typedef unsigned long   tPvUint32;  // 32-bit unsigned integer
-typedef float           tPvFloat32; // IEEE 32-bit float
+typedef long long       tPvInt64;   // 64-bit signed integer
+typedef unsigned char   tPvBoolean; // boolean
 #else
 #error Define specific data types for your platform.
 #endif
@@ -439,6 +444,8 @@ typedef enum
     ePvDatatypeEnum     = 4,
     ePvDatatypeUint32   = 5,
     ePvDatatypeFloat32  = 6,
+    ePvDatatypeInt64    = 7,
+    ePvDatatypeBoolean  = 8,
     __ePvDatatypeforce_32= 0xFFFFFFFF
 
 } tPvDatatype;
@@ -1410,6 +1417,33 @@ tPvErr PVDECL PvAttrRangeFloat32(tPvHandle Camera,
                                  tPvFloat32* pMin,
                                  tPvFloat32* pMax);
 
+/*
+ * Function:  PvAttrRangeInt64()
+ *
+ * Purpose:   Get the value range for a int64 attribute.
+ *
+ * Arguments:
+ *
+ * [ IN] tPvHandle Camera,          Handle to the camera 
+ * [ IN] const char* Name,          Attribute name 
+ * [OUT] tPvInt64* pMin,            Minimum value returned here
+ * [OUT] tPvInt64* pMax,            Maximum value returned here
+ *
+ * Return:    ePvErrSuccess if no error, otherwise likely to be any of the
+ *            following error codes:
+ *              
+ *               ePvErrBadHandle,       the handle of the camera is invalid
+ *               ePvErrUnplugged,       the camera has been unplugged 
+ *               ePvErrNotFound,        the requested attribute doesn't exist
+ *               ePvErrWrongType,       the requested attribute is not of the correct type
+ *               ePvBadParameter,       a valid pointer for pMin or pMax was not supplied
+ *               ePvErrInternalFault,   an internal fault occurred
+ *               ePvErrBadSequence,     API isn't initialized
+ */
+tPvErr PVDECL PvAttrRangeInt64(tPvHandle Camera,
+                               const char* Name,
+                               tPvInt64* pMin,
+                               tPvInt64* pMax);
 
 /*
  * Function:  PvCommandRun()
@@ -1667,6 +1701,110 @@ tPvErr PVDECL PvAttrFloat32Get(tPvHandle Camera,
 tPvErr PVDECL PvAttrFloat32Set(tPvHandle Camera,
                                const char* Name,
                                tPvFloat32 Value);
+
+/*
+ * Function:  PvAttrInt64Get()
+ *
+ * Purpose:   Get the value of a int64 attribute.
+ *
+ * Arguments:
+ *
+ * [ IN] tPvHandle Camera,          Handle to the camera 
+ * [ IN] const char* Name,          Attribute name 
+ * [OUT] tPvInt64* pValue,          Value is returned here
+ *
+ * Return:    ePvErrSuccess if no error, otherwise likely to be any of the
+ *            following error codes:
+ *              
+ *               ePvErrBadHandle,       the handle of the camera is invalid
+ *               ePvErrUnplugged,       the camera has been unplugged 
+ *               ePvErrNotFound,        the requested attribute doesn't exist
+ *               ePvErrWrongType,       the requested attribute is not of the correct type
+ *               ePvBadParameter,       a valid pointer for pValue was not supplied
+ *               ePvErrInternalFault,   an internal fault occurred
+ *               ePvErrBadSequence,     API isn't initialized
+ */
+tPvErr PVDECL PvAttrInt64Get(tPvHandle Camera,
+                             const char* Name,
+                             tPvInt64* pValue);
+
+
+/*
+ * Function:  PvAttrInt64Set()
+ *
+ * Purpose:   Set the value of a int64 attribute.
+ *
+ * Arguments:
+ *
+ * [ IN] tPvHandle Camera,          Handle to the camera 
+ * [ IN] const char* Name,          Attribute name 
+ * [ IN] tPvInt64 Value,            Value to set
+ *
+ * Return:    ePvErrSuccess if no error, otherwise likely to be any of the
+ *            following error codes:
+ *              
+ *               ePvErrBadHandle,       the handle of the camera is invalid
+ *               ePvErrUnplugged,       the camera has been unplugged 
+ *               ePvErrNotFound,        the requested attribute doesn't exist
+ *               ePvErrWrongType,       the requested attribute is not of the correct type
+ *               ePvErrForbidden,       the requested attribute forbid this operation
+ *               ePvErrOutOfRange,      the supplied value is out of range
+ *               ePvErrInternalFault,   an internal fault occurred
+ *               ePvErrBadSequence,     API isn't initialized
+ */
+tPvErr PVDECL PvAttrInt64Set(tPvHandle Camera,
+                              const char* Name,
+                              tPvInt64 Value);
+                              
+/*
+ * Function:  PvAttrBooleanGet()
+ *
+ * Purpose:   Get the value of a boolean attribute.
+ *
+ * Arguments:
+ *
+ * [ IN] tPvHandle Camera,          Handle to the camera 
+ * [ IN] const char* Name,          Attribute name 
+ * [OUT] tPvBoolean* pValue,        Value is returned here
+ *
+ * Return:    ePvErrSuccess if no error, otherwise likely to be any of the
+ *            following error codes:
+ *              
+ *               ePvErrBadHandle,       the handle of the camera is invalid
+ *               ePvErrUnplugged,       the camera has been unplugged 
+ *               ePvErrNotFound,        the requested attribute doesn't exist
+ *               ePvErrWrongType,       the requested attribute is not of the correct type
+ *               ePvBadParameter,       a valid pointer for pValue was not supplied
+ *               ePvErrInternalFault,   an internal fault occurred
+ *               ePvErrBadSequence,     API isn't initialized
+ */
+tPvErr PVDECL PvAttrBooleanGet(tPvHandle Camera,const char* Name,tPvBoolean* pValue);
+
+
+/*
+ * Function:  PvAttrBooleanSet()
+ *
+ * Purpose:   Set the value of a boolean attribute.
+ *
+ * Arguments:
+ *
+ * [ IN] tPvHandle Camera,          Handle to the camera 
+ * [ IN] const char* Name,          Attribute name 
+ * [ IN] tPvBoolean Value,          Value to set
+ *
+ * Return:    ePvErrSuccess if no error, otherwise likely to be any of the
+ *            following error codes:
+ *              
+ *               ePvErrBadHandle,       the handle of the camera is invalid
+ *               ePvErrUnplugged,       the camera has been unplugged 
+ *               ePvErrNotFound,        the requested attribute doesn't exist
+ *               ePvErrWrongType,       the requested attribute is not of the correct type
+ *               ePvErrForbidden,       the requested attribute forbid this operation
+ *               ePvErrOutOfRange,      the supplied value is out of range
+ *               ePvErrInternalFault,   an internal fault occurred
+ *               ePvErrBadSequence,     API isn't initialized
+ */
+tPvErr PVDECL PvAttrBooleanSet(tPvHandle Camera,const char* Name,tPvBoolean Value);
 
 //----- Camera event callback -------------------------------------------------
 
