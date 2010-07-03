@@ -35,6 +35,7 @@ camera_parameters_t camera_params={
   .exp_time = 1,
   .exp_gain = 1,
   .roi_hard_active = 0,
+  .roi_hard_clicking = ROI_CLICK_NONE,
 };
 
 // MAIN IS AT THE END
@@ -76,11 +77,6 @@ G_MODULE_EXPORT void cb_destroy( GtkWidget *widget,
 //Callback for the ROI values changed
 G_MODULE_EXPORT void cb_ROI_changed( GtkEditable *editable, gpointer   data )
 {
-
-  camera_params.roi_hard_x=(int)gtk_adjustment_get_value(camera_params.objects->ROI_adjust_x);
-  camera_params.roi_hard_y=(int)gtk_adjustment_get_value(camera_params.objects->ROI_adjust_y);
-  camera_params.roi_hard_width=(int)gtk_adjustment_get_value(camera_params.objects->ROI_adjust_width);
-  camera_params.roi_hard_height=(int)gtk_adjustment_get_value(camera_params.objects->ROI_adjust_height);
   if(camera_params.roi_hard_active)
     camera_update_roi(&camera_params);
 }
@@ -97,6 +93,70 @@ G_MODULE_EXPORT void cb_ROI_toggled(GtkToggleButton *togglebutton,gpointer   dat
   camera_update_roi(&camera_params);
 }
 
+
+G_MODULE_EXPORT void cb_select_ROI_clicked(GtkButton *button)
+{
+  camera_params.roi_hard_clicking=ROI_CLICK_CORNER1;
+}
+
+//Callback when the user click on the image
+G_MODULE_EXPORT void cb_Image_button_pressed(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+  if(event->type==GDK_BUTTON_PRESS)
+  {
+    if(camera_params.roi_hard_clicking==ROI_CLICK_CORNER1)
+    {
+      camera_params.roi_hard_corners[0][0]=(int)event->x;
+      camera_params.roi_hard_corners[0][1]=(int)event->y;
+      camera_params.roi_hard_clicking=ROI_CLICK_CORNER2;
+    }
+    else if(camera_params.roi_hard_clicking==ROI_CLICK_CORNER2)
+    {
+      if(((int)event->x) < (camera_params.roi_hard_corners[0][0]))
+      {
+	camera_params.roi_hard_corners[1][0]=camera_params.roi_hard_corners[0][0];
+	camera_params.roi_hard_corners[0][0]=(int)event->x;
+      }
+      else
+	camera_params.roi_hard_corners[1][0]=(int)event->x;
+      if(((int)event->y) < (camera_params.roi_hard_corners[0][1]))
+      {
+	camera_params.roi_hard_corners[1][1]=camera_params.roi_hard_corners[0][1];
+	camera_params.roi_hard_corners[0][1]=(int)event->y;
+      }
+      else
+	camera_params.roi_hard_corners[1][1]=(int)event->y;
+      camera_params.roi_hard_clicking=ROI_CLICK_NONE;
+      gtk_widget_show( camera_params.objects->ROI_confirm_dialog );
+      gchar *msg;
+      msg = g_strdup_printf ("Start X: %d, Width: %d\nStart Y: %d, Height: %d",
+			     camera_params.roi_hard_corners[0][0],
+			     camera_params.roi_hard_corners[1][0]-camera_params.roi_hard_corners[0][0],
+			     camera_params.roi_hard_corners[0][1],
+			     camera_params.roi_hard_corners[1][1]-camera_params.roi_hard_corners[0][1]);
+      gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params.objects->ROI_confirm_dialog_text)),msg,-1);
+      g_free (msg);
+    }
+  }
+}
+
+//Callbak when the user confirmed the selected ROI
+G_MODULE_EXPORT void cb_dialog_valid_ROI_clicked(GtkButton *button)
+{
+  gtk_adjustment_set_value(camera_params.objects->ROI_adjust_x,camera_params.roi_hard_corners[0][0]);
+  gtk_adjustment_set_value(camera_params.objects->ROI_adjust_width,camera_params.roi_hard_corners[1][0]-camera_params.roi_hard_corners[0][0]);
+  gtk_adjustment_set_value(camera_params.objects->ROI_adjust_y,camera_params.roi_hard_corners[0][1]);
+  gtk_adjustment_set_value(camera_params.objects->ROI_adjust_height,camera_params.roi_hard_corners[1][1]-camera_params.roi_hard_corners[0][1]);
+  if(camera_params.roi_hard_active)
+    camera_update_roi(&camera_params);
+
+  gtk_widget_hide( camera_params.objects->ROI_confirm_dialog );
+}
+
+G_MODULE_EXPORT void cb_dialog_cancel_ROI_clicked(GtkButton *button)
+{
+  gtk_widget_hide( camera_params.objects->ROI_confirm_dialog );
+}
 
 //Callback for the bytespersecond values changed
 G_MODULE_EXPORT void cb_BytesPerSecond_changed( GtkEditable *editable, gpointer   data )
@@ -122,7 +182,7 @@ G_MODULE_EXPORT void cb_Eposure_changed( GtkEditable *editable, gpointer   data 
   camera_set_exposure(&camera_params);
 }
 
-//Callback for the ROI button is toggled
+//Callback for the acquisition button is toggled
 G_MODULE_EXPORT void cb_Acquire_toggled(GtkToggleButton *togglebutton,gpointer   data )
 {
 
@@ -147,16 +207,58 @@ G_MODULE_EXPORT void cb_trig_changed( GtkEditable *editable, gpointer   data )
 }
 
 
-//Callback when the user click on the image
-G_MODULE_EXPORT void cb_Image_button_pressed(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+
+//Saving the actual image
+G_MODULE_EXPORT void cb_save_clicked(GtkButton *button)
 {
-  if(event->type==GDK_BUTTON_PRESS)
-  {
-    g_print("The image has been clicked at %f %f\n",event->x,event->y);
-  }
+  //Check if there is an image
+  if(camera_params.image_number==0)
+    gtk_widget_show( camera_params.objects->no_image_dialog );
+  else
+    gtk_widget_show( camera_params.objects->imagesavedialog );
 
 }
 
+G_MODULE_EXPORT void cb_noimg_dialog_close(GtkButton *button)
+{
+  gtk_widget_hide( camera_params.objects->no_image_dialog );
+}
+
+G_MODULE_EXPORT void cb_image_save_cancel_clicked(GtkButton *button)
+{
+  gtk_widget_hide( camera_params.objects->imagesavedialog );
+}
+
+G_MODULE_EXPORT void cb_image_save_ok_clicked(GtkButton *button)
+{
+  char *filename;
+  filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (camera_params.objects->imagesavedialog));
+  g_print("Filename %s\n",filename);
+  g_free (filename);
+  gtk_widget_hide( camera_params.objects->imagesavedialog );
+}
+
+
+//Directory chooser
+G_MODULE_EXPORT void cb_choose_dir_clicked(GtkButton *button)
+{
+  gtk_widget_show( camera_params.objects->directorychooserdialog );
+}
+
+G_MODULE_EXPORT void cb_directory_chooser_cancel_clicked(GtkButton *button)
+{
+  gtk_widget_hide( camera_params.objects->directorychooserdialog );
+}
+
+G_MODULE_EXPORT void cb_directory_chooser_open_clicked(GtkButton *button)
+{
+  char *filename;
+  filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (camera_params.objects->directorychooserdialog));
+  g_print("Directory %s\n",filename);
+  g_free (filename);
+
+  gtk_widget_hide( camera_params.objects->directorychooserdialog );
+}
 
 
 int
@@ -208,6 +310,11 @@ main( int    argc,
     GW( ext1_trig );
     GW( ext2_trig );
     GW( framerate_trig );
+    GW( directorychooserdialog );
+    GW( imagesavedialog );
+    GW( no_image_dialog );
+    GW( ROI_confirm_dialog );
+    GW( ROI_confirm_dialog_text );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )

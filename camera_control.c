@@ -93,10 +93,10 @@ void camera_update_roi(camera_parameters_t* camera_params)
   g_print("update ROI");
   if(camera_params->roi_hard_active)
   {
-    PvAttrUint32Set(camera_params->camera_handler,"Height",camera_params->roi_hard_height);
-    PvAttrUint32Set(camera_params->camera_handler,"RegionX",camera_params->roi_hard_x);
-    PvAttrUint32Set(camera_params->camera_handler,"RegionY",camera_params->roi_hard_y);
-    PvAttrUint32Set(camera_params->camera_handler,"Width",camera_params->roi_hard_width);
+    PvAttrUint32Set(camera_params->camera_handler,"Height",(int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_height));
+    PvAttrUint32Set(camera_params->camera_handler,"RegionX",(int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_x));
+    PvAttrUint32Set(camera_params->camera_handler,"RegionY",(int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_y));
+    PvAttrUint32Set(camera_params->camera_handler,"Width",(int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_width));
   }
   else
   {

@@ -57,6 +57,11 @@ typedef struct gui_objects_t{
   GtkWidget *ext1_trig;
   GtkWidget *ext2_trig;
   GtkWidget *framerate_trig;
+  GtkWidget *directorychooserdialog;
+  GtkWidget *imagesavedialog;
+  GtkWidget *no_image_dialog;
+  GtkWidget *ROI_confirm_dialog;
+  GtkWidget *ROI_confirm_dialog_text;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -69,6 +74,11 @@ typedef struct gui_objects_t{
   GtkAdjustment *Trig_nbframes_adj;
   GtkAdjustment *Trig_framerate_adj;
 }gui_objects_t;
+
+
+#define ROI_CLICK_NONE 0
+#define ROI_CLICK_CORNER1 1
+#define ROI_CLICK_CORNER2 2
 
 typedef struct camera_parameters_t{
   //Camera handler
@@ -94,10 +104,8 @@ typedef struct camera_parameters_t{
   int exp_gain; //camera gain
   //Hardware region of interest information
   int roi_hard_active;
-  int roi_hard_x;
-  int roi_hard_width;
-  int roi_hard_y;
-  int roi_hard_height;
+  int roi_hard_corners[2][2]; //The corners of the selected ROI
+  int roi_hard_clicking; //Are we selecting the ROI on the image
   //Binning
   int binning_x;
   int binning_y;
