@@ -150,7 +150,6 @@ G_MODULE_EXPORT void cb_trig_changed( GtkEditable *editable, gpointer   data )
 //Callback when the user click on the image
 G_MODULE_EXPORT void cb_Image_button_pressed(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-  g_print("Th\n");
   if(event->type==GDK_BUTTON_PRESS)
   {
     g_print("The image has been clicked at %f %f\n",event->x,event->y);
@@ -158,16 +157,6 @@ G_MODULE_EXPORT void cb_Image_button_pressed(GtkWidget *widget, GdkEventButton *
 
 }
 
-//Callback when the user click on the image
-G_MODULE_EXPORT void cb_Image_button_released(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
-{
-  g_print("Th\n");
-  if(event->type==GDK_BUTTON_RELEASE)
-  {
-    g_print("The image has been released at %f %f\n",event->x,event->y);
-  }
-
-}
 
 
 int
