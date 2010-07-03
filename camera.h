@@ -52,7 +52,11 @@ typedef struct gui_objects_t{
   GtkWidget *ext_trig;
   GtkWidget *trig_mult;
   GtkWidget *trig_single;
-  GtkWidget *trig_cont;  
+  GtkWidget *trig_cont;
+  GtkWidget *freerun_trig;
+  GtkWidget *ext1_trig;
+  GtkWidget *ext2_trig;
+  GtkWidget *framerate_trig;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -63,6 +67,7 @@ typedef struct gui_objects_t{
   GtkAdjustment *Bin_Y_adj;
   GtkAdjustment *Bytes_per_sec_adj;
   GtkAdjustment *Trig_nbframes_adj;
+  GtkAdjustment *Trig_framerate_adj;
 }gui_objects_t;
 
 typedef struct camera_parameters_t{

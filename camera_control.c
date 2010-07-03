@@ -31,6 +31,63 @@
 
 #define MAX_CAMERA_LIST 20
 
+char *PvAPIerror_to_str(tPvErr error)
+{
+  switch(error)
+  {
+  case ePvErrSuccess:
+    return "No Error";
+  case ePvErrCameraFault:
+    return "Unexpected camera fault";
+  case ePvErrInternalFault:
+    return "Unexpected fault in PvApi or driver";
+  case ePvErrBadHandle:
+    return "Camera handle is invalid";
+  case ePvErrBadParameter:
+    return "Bad parameter to API call";
+  case ePvErrBadSequence:
+    return "Sequence of API calls is incorrect";
+  case ePvErrNotFound:
+    return "Camera or attribute not found";
+  case ePvErrAccessDenied:
+    return "Camera cannot be opened in the specified mode";
+  case ePvErrUnplugged:
+    return "Camera was unplugged";
+  case ePvErrInvalidSetup:
+    return "Setup is invalid (an attribute is invalid)";
+  case ePvErrResources:
+    return "System/network resources or memory not available";
+  case ePvErrBandwidth:
+    return "1394 bandwidth not available";
+  case ePvErrQueueFull:
+    return "Too many frames on queue";
+  case ePvErrBufferTooSmall:
+    return "Frame buffer is too small";
+  case ePvErrCancelled:
+    return "Frame cancelled by user";
+  case ePvErrDataLost:
+    return "The data for the frame was lost";
+  case ePvErrDataMissing:
+    return "Some data in the frame is missing";
+  case ePvErrTimeout:
+    return "Timeout during wait";
+  case ePvErrOutOfRange:
+    return "Attribute value is out of the expected range";
+  case ePvErrWrongType:
+    return "Attribute is not this type (wrong access function)";
+  case ePvErrForbidden:
+    return "Attribute write forbidden at this time";
+  case ePvErrUnavailable:
+    return "Attribute is not available at this time";
+  case ePvErrFirewall:
+    return "A firewall is blocking the traffic (Windows only)";
+  case __ePvErr_force_32: //To make the compiler happy
+    return "";
+  }
+  return "Unknown error";
+}
+
+
 void camera_update_roi(camera_parameters_t* camera_params)
 {
   g_print("update ROI");
@@ -74,15 +131,35 @@ void camera_stop_grabbing(camera_parameters_t* camera_params)
 
 void camera_set_triggering(camera_parameters_t* camera_params)
 {
-  
+  int ret=0;
   //We set the trigger soure
-  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->ext_trig))==TRUE)
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->ext1_trig))==TRUE)
   {
     PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","SyncIn1");
     PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerEvent","EdgeRising");
   }
-  else
+  else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->ext2_trig))==TRUE)
+  {
+    PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","SyncIn2");
+    PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerEvent","EdgeRising");
+  }
+  else   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->freerun_trig))==TRUE)
+  {
     PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","Freerun");
+  }
+  else   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->framerate_trig))==TRUE)
+  {
+    PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","FixedRate");
+    ret=PvAttrFloat32Set(camera_params->camera_handler,"FrameRate",gtk_adjustment_get_value(camera_params->objects->Trig_framerate_adj));
+    if(ret)
+      g_print("Error %s\n",PvAPIerror_to_str(ret));
+  }
+  else
+  {
+    g_warning("bug in the trigger back to freerun\n");
+    PvAttrEnumSet(camera_params->camera_handler, "FrameStartTriggerMode","Freerun");
+  }
+
 
 
   //We set the framecount/acquisition mode
@@ -97,7 +174,7 @@ void camera_set_triggering(camera_parameters_t* camera_params)
   }
   else
   {
-    g_warning("bug in the trigger bak to continuous\n");
+    g_warning("bug in the trigger back to continuous\n");
     PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "Continuous");
   }
 
@@ -216,13 +293,11 @@ void *camera_thread_func(void* arg)
   g_print("Camera thread started\n");
   if((ret=PvInitialize()))
   {
-    g_warning("failed to initialise the Camera API. Error %d\n", ret);
-    msg = g_strdup_printf ("Failed to initialise the Camera API. Error %d", ret);
+    g_warning("failed to initialise the Camera API. Error %s\n", PvAPIerror_to_str(ret));
+    msg = g_strdup_printf ("Failed to initialise the Camera API. Error %s", PvAPIerror_to_str(ret));
     gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
     gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
     g_free (msg);
-
-    g_warning("failed to initialise the Camera API. Error %d\n", ret);
     return NULL;
   }
 
@@ -269,19 +344,9 @@ void *camera_thread_func(void* arg)
 	    ret=PvCameraOpen(cameraList[0].UniqueId,ePvAccessMaster,&camera_params->camera_handler);
 	    if(ret!=ePvErrSuccess)
 	    {
-	      g_warning("Error while opening the camera : %d",ret);
+	      g_warning("Error while opening the camera : %s",PvAPIerror_to_str(ret));
 	      gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	      switch(ret)
-	      {
-	        case ePvErrAccessDenied:
-	          msg = g_strdup_printf ("Camera error : Access denied (another apliation is using it ?)");
-	          break;
-	        case ePvErrNotFound:
-	          msg = g_strdup_printf ("Camera error : Camera not found (camera unplugged ?)");
-	          break;
-  	        default:
-	          msg = g_strdup_printf ("Camera error : Unknown error");
-	      }
+	      msg = g_strdup_printf ("Camera error : %s",PvAPIerror_to_str(ret));
 	      gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
 	      g_free (msg);
 	      usleep(1000000); //some waiting 
@@ -341,6 +406,12 @@ void *camera_thread_func(void* arg)
 	    gtk_adjustment_set_lower(camera_params->objects->Trig_nbframes_adj,min);
 	    gtk_adjustment_set_upper(camera_params->objects->Trig_nbframes_adj,max);
 	    gtk_adjustment_set_value(camera_params->objects->Trig_nbframes_adj,min);
+	    tPvFloat32 fmin,fmax;
+	    PvAttrRangeFloat32(camera_params->camera_handler,"FrameRate",&fmin,&fmax);
+	    gtk_adjustment_set_lower(camera_params->objects->Trig_framerate_adj,fmin);
+	    gtk_adjustment_set_upper(camera_params->objects->Trig_framerate_adj,fmax);
+	    gtk_adjustment_set_value(camera_params->objects->Trig_framerate_adj,fmin);
+
 	    /********************* Camera INIT *******************/
 	    //Now we adjust the packet size
 	    if(!PvCaptureAdjustPacketSize(camera_params->camera_handler,9000))
@@ -400,7 +471,7 @@ void *camera_thread_func(void* arg)
       if((ret==ePvErrSuccess)&&(camera_params->camera_frame.Status!=ePvErrSuccess))
       {
 	//Error on the frame, we restart the Grabbing
-	g_print("Frame error\n");
+	g_print("Frame error : %s\n",PvAPIerror_to_str(ret));
 	camera_stop_grabbing(camera_params);
 	camera_start_grabbing(camera_params);
       }

@@ -141,7 +141,7 @@ G_MODULE_EXPORT void cb_trig_toggled(GtkToggleButton *togglebutton,gpointer   da
   camera_set_triggering(&camera_params);
 }
 
-G_MODULE_EXPORT void cb_trig_nbframes_changed( GtkEditable *editable, gpointer   data )
+G_MODULE_EXPORT void cb_trig_changed( GtkEditable *editable, gpointer   data )
 {
   camera_set_triggering(&camera_params);
 }
@@ -215,6 +215,10 @@ main( int    argc,
     GW( trig_mult );
     GW( trig_single );
     GW( trig_cont );
+    GW( freerun_trig );
+    GW( ext1_trig );
+    GW( ext2_trig );
+    GW( framerate_trig );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -228,6 +232,7 @@ main( int    argc,
     GA( Bin_Y_adj );
     GA( Bytes_per_sec_adj );
     GA( Trig_nbframes_adj);
+    GA( Trig_framerate_adj);
 #undef GA
 
 
