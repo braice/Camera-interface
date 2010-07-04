@@ -96,7 +96,11 @@ G_MODULE_EXPORT void cb_ROI_toggled(GtkToggleButton *togglebutton,gpointer   dat
 
 G_MODULE_EXPORT void cb_select_ROI_clicked(GtkButton *button)
 {
-  camera_params.roi_hard_clicking=ROI_CLICK_CORNER1;
+  //message if we are already using a ROI
+  //  if(camera_params.roi_hard_active==1)
+  //;
+  //else
+    camera_params.roi_hard_clicking=ROI_CLICK_CORNER1;
 }
 
 //Callback when the user click on the image
@@ -129,6 +133,7 @@ G_MODULE_EXPORT void cb_Image_button_pressed(GtkWidget *widget, GdkEventButton *
       camera_params.roi_hard_clicking=ROI_CLICK_NONE;
       gtk_widget_show( camera_params.objects->ROI_confirm_dialog );
       gchar *msg;
+      //NOTE : if there is already an ROI used, we have probably to sum the values with the current camera ROI 
       msg = g_strdup_printf ("Start X: %d, Width: %d\nStart Y: %d, Height: %d",
 			     camera_params.roi_hard_corners[0][0],
 			     camera_params.roi_hard_corners[1][0]-camera_params.roi_hard_corners[0][0],

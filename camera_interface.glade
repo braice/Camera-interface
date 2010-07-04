@@ -733,7 +733,6 @@ by clicking on the image
                         <property name="visible">True</property>
                         <child>
                           <object class="GtkTextView" id="image_number">
-                            <property name="width_request">70</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="pixels_above_lines">5</property>

@@ -90,7 +90,6 @@ char *PvAPIerror_to_str(tPvErr error)
 
 void camera_update_roi(camera_parameters_t* camera_params)
 {
-  g_print("update ROI");
   if(camera_params->roi_hard_active)
   {
     PvAttrUint32Set(camera_params->camera_handler,"Height",(int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_height));
@@ -194,6 +193,9 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
   g_print("camera_start_grabbing\n");
   camera_set_exposure(camera_params);
   camera_set_triggering(camera_params);
+  //set the ROI
+  camera_update_roi(camera_params);
+
   PvCaptureStart(camera_params->camera_handler);
 
   //We initialize the frame buffer
@@ -220,10 +222,13 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
 void camera_new_image(camera_parameters_t* camera_params)
 {
   gchar *msg;
+  int width,height;
+  width=camera_params->camera_frame.Width;
+  height=camera_params->camera_frame.Height;
 
   gdk_threads_enter();
   camera_params->image_number++;
-  msg = g_strdup_printf ("%ld", camera_params->image_number);
+  msg = g_strdup_printf ("size: %dx%d \t num: %ld", width, height, camera_params->image_number);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->image_number)),msg,-1);
   g_free (msg);
 
@@ -232,11 +237,23 @@ void camera_new_image(camera_parameters_t* camera_params)
   //If we didn't set a pixbuf yet, we do it
   if(camera_params->raw_image_pixbuff==NULL)
   {
-    //GdkPixbuf*  gdk_pixbuf_new(GdkColorspace colorspace, gboolean has_alpha, int bits_per_sample, int width, int height);
     camera_params->raw_image_pixbuff=
-      gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, camera_params->sensorwidth, camera_params->sensorheight);
-    //    camera_params->raw_image_pixbuff=
-    //gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 16, camera_params->sensorwidth, camera_params->sensorheight);
+      gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
+    //We associate this new pixbuf with the image
+    gtk_image_set_from_pixbuf(GTK_IMAGE(camera_params->objects->raw_image),camera_params->raw_image_pixbuff);
+    g_object_ref(camera_params->raw_image_pixbuff);
+  }
+  else if((width!=gdk_pixbuf_get_width(camera_params->raw_image_pixbuff))||
+	  (height!=gdk_pixbuf_get_height(camera_params->raw_image_pixbuff)))
+  {
+    //The size of the frame is different from the size of the pixbuff
+    //we dereference the pixbuff so the garbage colletor can work
+    g_object_unref(camera_params->raw_image_pixbuff);
+    //clear the image
+    gtk_image_clear(GTK_IMAGE(camera_params->objects->raw_image));
+    //create the new pixbuff
+    camera_params->raw_image_pixbuff=
+      gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
     //We associate this new pixbuf with the image
     gtk_image_set_from_pixbuf(GTK_IMAGE(camera_params->objects->raw_image),camera_params->raw_image_pixbuff);
     g_object_ref(camera_params->raw_image_pixbuff);
@@ -247,20 +264,21 @@ void camera_new_image(camera_parameters_t* camera_params)
 
   //convert black and white into RGB
   char pixel;
-  int row, col, pos;
-  //Todo use the buffer width
-  for(row=0;row<camera_params->sensorheight;row++)
+  int row, col, pos, rowstride;
+  rowstride=gdk_pixbuf_get_rowstride(camera_params->raw_image_pixbuff);
+  //Todo binning tests
+  for(row=0;row<height;row++)
   {
-    for(col=0;col<camera_params->sensorwidth;col++)
+    for(col=0;col<width;col++)
     {
-      pos=row*camera_params->sensorwidth+col;
+      pos=row*width+col;
       //RED
       pixel=(((((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)+1])<<4)&0xF0) +(((((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)])>>4)&0x0F);
-      pixels[0+3*(pos)]=pixel;
+      pixels[0+3*(col)+row*rowstride]=pixel;
       //GREEN
-      pixels[1+3*(pos)]=pixel;
+      pixels[1+3*(col)+row*rowstride]=pixel;
       //BLUE
-      pixels[2+3*(pos)]=pixel;
+      pixels[2+3*(col)+row*rowstride]=pixel;
     }
   }
 
