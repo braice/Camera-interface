@@ -93,6 +93,14 @@ G_MODULE_EXPORT void cb_ROI_toggled(GtkToggleButton *togglebutton,gpointer   dat
   camera_update_roi(&camera_params);
 }
 
+//Callback for the ROI reset is clicked
+G_MODULE_EXPORT void cb_ROI_reset_clicked(GtkButton *button)
+{
+  camera_reset_roi(&camera_params);
+  camera_update_roi(&camera_params);
+}
+
+
 
 G_MODULE_EXPORT void cb_select_ROI_clicked(GtkButton *button)
 {
@@ -133,7 +141,17 @@ G_MODULE_EXPORT void cb_Image_button_pressed(GtkWidget *widget, GdkEventButton *
       camera_params.roi_hard_clicking=ROI_CLICK_NONE;
       gtk_widget_show( camera_params.objects->ROI_confirm_dialog );
       gchar *msg;
-      //NOTE : if there is already an ROI used, we have probably to sum the values with the current camera ROI 
+      //if there is already an ROI used, we have to sum the values with the current camera ROI 
+      unsigned long RegionX,RegionY;
+      PvAttrUint32Get(camera_params.camera_handler,"RegionX", &RegionX);
+      PvAttrUint32Get(camera_params.camera_handler,"RegionY", &RegionY);
+      if((camera_params.image_number>0)&&((RegionX !=0) || (RegionY != 0)))
+	{
+	  camera_params.roi_hard_corners[0][0]+=RegionX;
+	  camera_params.roi_hard_corners[1][0]+=RegionX;
+	  camera_params.roi_hard_corners[0][1]+=RegionY;
+	  camera_params.roi_hard_corners[1][1]+=RegionY;
+	}
       msg = g_strdup_printf ("Start X: %d, Width: %d\nStart Y: %d, Height: %d",
 			     camera_params.roi_hard_corners[0][0],
 			     camera_params.roi_hard_corners[1][0]-camera_params.roi_hard_corners[0][0],

@@ -188,6 +188,27 @@ void camera_set_exposure(camera_parameters_t* camera_params)
 
 }
 
+void camera_reset_roi(camera_parameters_t* camera_params)
+{
+  unsigned long min,max;
+  PvAttrRangeUint32(camera_params->camera_handler,"Height",&min,&max);
+  gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_height,min);
+  gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_height,max);
+  gtk_adjustment_set_value(camera_params->objects->ROI_adjust_height,max);
+  PvAttrRangeUint32(camera_params->camera_handler,"RegionX",&min,&max);
+  gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_x,min);
+  gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_x,max);
+  gtk_adjustment_set_value(camera_params->objects->ROI_adjust_x,min);
+  PvAttrRangeUint32(camera_params->camera_handler,"RegionY",&min,&max);
+  gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_y,min);
+  gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_y,max);
+  gtk_adjustment_set_value(camera_params->objects->ROI_adjust_y,min);
+  PvAttrRangeUint32(camera_params->camera_handler,"Width",&min,&max);
+  gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_width,min);
+  gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_width,max);
+  gtk_adjustment_set_value(camera_params->objects->ROI_adjust_width,max);
+}
+
 void camera_start_grabbing(camera_parameters_t* camera_params)
 {
   g_print("camera_start_grabbing\n");
@@ -228,9 +249,6 @@ void camera_new_image(camera_parameters_t* camera_params)
 
   gdk_threads_enter();
   camera_params->image_number++;
-  msg = g_strdup_printf ("size: %dx%d \t num: %ld", width, height, camera_params->image_number);
-  gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->image_number)),msg,-1);
-  g_free (msg);
 
   //note : in case of redim, unref the pixbuf, create a new one and associate it with the image
   //todo check the size of the pixbuf versus the size of the camera buffer
@@ -265,6 +283,8 @@ void camera_new_image(camera_parameters_t* camera_params)
   //convert black and white into RGB
   char pixel;
   int row, col, pos, rowstride;
+  long double mean;
+  mean=0;
   rowstride=gdk_pixbuf_get_rowstride(camera_params->raw_image_pixbuff);
   //Todo binning tests
   for(row=0;row<height;row++)
@@ -273,6 +293,7 @@ void camera_new_image(camera_parameters_t* camera_params)
     {
       pos=row*width+col;
       //RED
+      mean+=((((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)+1]<<8)+((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)]);
       pixel=(((((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)+1])<<4)&0xF0) +(((((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)])>>4)&0x0F);
       pixels[0+3*(col)+row*rowstride]=pixel;
       //GREEN
@@ -281,6 +302,11 @@ void camera_new_image(camera_parameters_t* camera_params)
       pixels[2+3*(col)+row*rowstride]=pixel;
     }
   }
+
+  mean/=(height*width);
+  msg = g_strdup_printf ("Size: %dx%d \tMean %.3Lf\tNumber: %ld", width, height, mean, camera_params->image_number);
+  gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->image_number)),msg,-1);
+  g_free (msg);
 
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->raw_image);
@@ -389,22 +415,7 @@ void *camera_thread_func(void* arg)
 	    gtk_adjustment_set_lower(camera_params->objects->Exp_adj_time,time_min/1000+1);
 	    gtk_adjustment_set_upper(camera_params->objects->Exp_adj_time,time_max/1000);
 	    gtk_adjustment_set_value(camera_params->objects->Exp_adj_time,time_min/1000+1);
-	    PvAttrRangeUint32(camera_params->camera_handler,"Height",&min,&max);
-	    gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_height,min);
-	    gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_height,max);
-	    gtk_adjustment_set_value(camera_params->objects->ROI_adjust_height,max);
-	    PvAttrRangeUint32(camera_params->camera_handler,"RegionX",&min,&max);
-	    gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_x,min);
-	    gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_x,max);
-	    gtk_adjustment_set_value(camera_params->objects->ROI_adjust_x,min);
-	    PvAttrRangeUint32(camera_params->camera_handler,"RegionY",&min,&max);
-	    gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_y,min);
-	    gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_y,max);
-	    gtk_adjustment_set_value(camera_params->objects->ROI_adjust_y,min);
-	    PvAttrRangeUint32(camera_params->camera_handler,"Width",&min,&max);
-	    gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_width,min);
-	    gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_width,max);
-	    gtk_adjustment_set_value(camera_params->objects->ROI_adjust_width,max);
+	    camera_reset_roi(camera_params);
 	    PvAttrRangeUint32(camera_params->camera_handler,"BinningX",&min,&max);
 	    gtk_adjustment_set_lower(camera_params->objects->Bin_X_adj,min);
 	    gtk_adjustment_set_upper(camera_params->objects->Bin_X_adj,max);
@@ -489,7 +500,7 @@ void *camera_thread_func(void* arg)
       if((ret==ePvErrSuccess)&&(camera_params->camera_frame.Status!=ePvErrSuccess))
       {
 	//Error on the frame, we restart the Grabbing
-	g_print("Frame error : %s\n",PvAPIerror_to_str(ret));
+	g_print("Frame error : %s\n",PvAPIerror_to_str(camera_params->camera_frame.Status));
 	camera_stop_grabbing(camera_params);
 	camera_start_grabbing(camera_params);
       }
