@@ -42,6 +42,8 @@
     CH_GET_OBJECT( builder, name, GTK_WIDGET, data )
 #define CH_GET_ADJUSTMENT( builder, name, data ) \
     CH_GET_OBJECT( builder, name, GTK_ADJUSTMENT, data )
+#define CH_GET_LIST_STORE( builder, name, data ) \
+    CH_GET_OBJECT( builder, name, GTK_LIST_STORE, data )
 
 typedef struct gui_objects_t{
   GtkWidget *main_window;
@@ -62,6 +64,7 @@ typedef struct gui_objects_t{
   GtkWidget *no_image_dialog;
   GtkWidget *ROI_confirm_dialog;
   GtkWidget *ROI_confirm_dialog_text;
+  GtkWidget *stats_treeview;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -73,6 +76,7 @@ typedef struct gui_objects_t{
   GtkAdjustment *Bytes_per_sec_adj;
   GtkAdjustment *Trig_nbframes_adj;
   GtkAdjustment *Trig_framerate_adj;
+  GtkListStore *statistics_list;
 }gui_objects_t;
 
 

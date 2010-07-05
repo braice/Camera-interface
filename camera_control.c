@@ -240,7 +240,7 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
 
 }
 
-void camera_new_image(camera_parameters_t* camera_params)
+void camera_new_image(camera_parameters_t* camera_params, long start_time)
 {
   gchar *msg;
   int width,height;
@@ -307,6 +307,32 @@ void camera_new_image(camera_parameters_t* camera_params)
   msg = g_strdup_printf ("Size: %dx%d \tMean %.3Lf\tNumber: %ld", width, height, mean, camera_params->image_number);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->image_number)),msg,-1);
   g_free (msg);
+  //We add the new value to the array
+  struct timeval tv;
+  gdouble time, time_usec;
+  gettimeofday (&tv, (struct timezone *) NULL);
+  time_usec=tv.tv_usec;
+  time_usec/=1000000;
+  time = tv.tv_sec-start_time+time_usec;
+  
+
+  GtkTreeIter iter;
+  gtk_list_store_append (camera_params->objects->statistics_list, &iter);
+  gtk_list_store_set (camera_params->objects->statistics_list, &iter,
+		      0, (gint)camera_params->image_number,
+		      1, time,
+		      2, (gdouble)mean,
+		      -1);
+  /* With NULL as iter, we get the number of toplevel nodes. */
+  gint rows = gtk_tree_model_iter_n_children(GTK_TREE_MODEL(camera_params->objects->statistics_list), NULL);
+  GtkTreePath *path;
+  /* Now get a path from the index. */
+  path = gtk_tree_path_new_from_indices(rows - 1, -1);
+  gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW (camera_params->objects->stats_treeview), path, NULL, TRUE, 0.0, 0.0); 
+  /* Drop the path, we're done with it. */
+  gtk_tree_path_free(path);
+
+
 
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->raw_image);
@@ -496,7 +522,7 @@ void *camera_thread_func(void* arg)
     {
       ret=PvCaptureWaitForFrameDone(camera_params->camera_handler, &camera_params->camera_frame, FRAME_WAIT_TIMEOUT);
       if((ret==ePvErrSuccess)&&(camera_params->camera_frame.Status==ePvErrSuccess))
-	camera_new_image(camera_params);
+	camera_new_image(camera_params, start_time);
       if((ret==ePvErrSuccess)&&(camera_params->camera_frame.Status!=ePvErrSuccess))
       {
 	//Error on the frame, we restart the Grabbing

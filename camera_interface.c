@@ -258,6 +258,7 @@ G_MODULE_EXPORT void cb_image_save_ok_clicked(GtkButton *button)
   filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (camera_params.objects->imagesavedialog));
   g_print("Filename %s\n",filename);
   g_free (filename);
+  //http://library.gnome.org/devel/gdk-pixbuf/unstable/gdk-pixbuf3-file-saving.html#gdk-pixbuf-save
   gtk_widget_hide( camera_params.objects->imagesavedialog );
 }
 
@@ -281,6 +282,13 @@ G_MODULE_EXPORT void cb_directory_chooser_open_clicked(GtkButton *button)
   g_free (filename);
 
   gtk_widget_hide( camera_params.objects->directorychooserdialog );
+}
+
+
+//List store reset
+G_MODULE_EXPORT void cb_list_reset_clicked(GtkButton *button)
+{
+  gtk_list_store_clear ( camera_params.objects->statistics_list );
 }
 
 
@@ -338,6 +346,7 @@ main( int    argc,
     GW( no_image_dialog );
     GW( ROI_confirm_dialog );
     GW( ROI_confirm_dialog_text );
+    GW( stats_treeview );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -353,7 +362,9 @@ main( int    argc,
     GA( Trig_nbframes_adj);
     GA( Trig_framerate_adj);
 #undef GA
-
+#define GL( name ) CH_GET_LIST_STORE( builder, name, data )
+    GL( statistics_list );
+#undef GL
 
     /* Connect signals */
     gtk_builder_connect_signals( builder, NULL );
