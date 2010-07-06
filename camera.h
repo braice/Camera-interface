@@ -65,6 +65,7 @@ typedef struct gui_objects_t{
   GtkWidget *ROI_confirm_dialog;
   GtkWidget *ROI_confirm_dialog_text;
   GtkWidget *stats_treeview;
+  GtkWidget *acq_toggle;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -110,9 +111,13 @@ typedef struct camera_parameters_t{
   int roi_hard_active;
   int roi_hard_corners[2][2]; //The corners of the selected ROI
   int roi_hard_clicking; //Are we selecting the ROI on the image
+  int roi_hard_X_lastimage;
+  int roi_hard_Y_lastimage;
   //Binning
   int binning_x;
   int binning_y;
+  //Do we autoscroll the chart
+  int autoscroll_chart;
   //The GUI objects
   gui_objects_t *objects;
 }camera_parameters_t;

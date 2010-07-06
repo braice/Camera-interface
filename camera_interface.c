@@ -30,12 +30,14 @@ camera_parameters_t camera_params={
   .image_number = 0,
   .camera_thread_shutdown = 0,
   .camera_connected = 0,
-  .image_number = 0,
   .grab_images = 0,
   .exp_time = 1,
   .exp_gain = 1,
   .roi_hard_active = 0,
   .roi_hard_clicking = ROI_CLICK_NONE,
+  .roi_hard_X_lastimage = 0,
+  .roi_hard_Y_lastimage = 0,
+  .autoscroll_chart = 0,
 };
 
 // MAIN IS AT THE END
@@ -142,15 +144,12 @@ G_MODULE_EXPORT void cb_Image_button_pressed(GtkWidget *widget, GdkEventButton *
       gtk_widget_show( camera_params.objects->ROI_confirm_dialog );
       gchar *msg;
       //if there is already an ROI used, we have to sum the values with the current camera ROI 
-      unsigned long RegionX,RegionY;
-      PvAttrUint32Get(camera_params.camera_handler,"RegionX", &RegionX);
-      PvAttrUint32Get(camera_params.camera_handler,"RegionY", &RegionY);
-      if((camera_params.image_number>0)&&((RegionX !=0) || (RegionY != 0)))
+      if((camera_params.image_number>0)&&((camera_params.roi_hard_X_lastimage !=0) || (camera_params.roi_hard_Y_lastimage != 0)))
 	{
-	  camera_params.roi_hard_corners[0][0]+=RegionX;
-	  camera_params.roi_hard_corners[1][0]+=RegionX;
-	  camera_params.roi_hard_corners[0][1]+=RegionY;
-	  camera_params.roi_hard_corners[1][1]+=RegionY;
+	  camera_params.roi_hard_corners[0][0]+=camera_params.roi_hard_X_lastimage;
+	  camera_params.roi_hard_corners[1][0]+=camera_params.roi_hard_X_lastimage;
+	  camera_params.roi_hard_corners[0][1]+=camera_params.roi_hard_Y_lastimage;
+	  camera_params.roi_hard_corners[1][1]+=camera_params.roi_hard_Y_lastimage;
 	}
       msg = g_strdup_printf ("Start X: %d, Width: %d\nStart Y: %d, Height: %d",
 			     camera_params.roi_hard_corners[0][0],
@@ -229,6 +228,16 @@ G_MODULE_EXPORT void cb_trig_changed( GtkEditable *editable, gpointer   data )
   camera_set_triggering(&camera_params);
 }
 
+
+//Callback for the autoscroll button is toggled
+G_MODULE_EXPORT void cb_autoscroll_toggled(GtkToggleButton *togglebutton,gpointer   data )
+{
+
+  if(gtk_toggle_button_get_active(togglebutton)==TRUE)
+    camera_params.autoscroll_chart=1;
+  else
+    camera_params.autoscroll_chart=0;
+}
 
 
 //Saving the actual image
@@ -347,6 +356,7 @@ main( int    argc,
     GW( ROI_confirm_dialog );
     GW( ROI_confirm_dialog_text );
     GW( stats_treeview );
+    GW( acq_toggle );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )

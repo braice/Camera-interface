@@ -31,6 +31,8 @@
 
 #define MAX_CAMERA_LIST 20
 
+void camera_reset_roi(camera_parameters_t* camera_params);
+
 char *PvAPIerror_to_str(tPvErr error)
 {
   switch(error)
@@ -86,6 +88,109 @@ char *PvAPIerror_to_str(tPvErr error)
   }
   return "Unknown error";
 }
+
+
+int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *DisplayName)
+{
+  int ret;
+  gchar *msg; 
+
+  ret=PvCameraOpen(UniqueId,ePvAccessMaster,&camera_params->camera_handler);
+  if(ret!=ePvErrSuccess)
+  {
+    g_warning("Error while opening the camera : %s",PvAPIerror_to_str(ret));
+    gdk_threads_enter();
+    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+    msg = g_strdup_printf ("Camera error : %s",PvAPIerror_to_str(ret));
+    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+    g_free (msg);
+    gdk_threads_leave();
+    usleep(1000000); //some waiting 
+    return 1;
+  }
+  /****************** Camera information getting ************/
+  unsigned long gainmin, gainmax,min,max;
+  //ret=PvAttrStringGet(camera_params->camera_handler,"DeviceModelName",ModelName,100,NULL);
+  PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&camera_params->sensorbits);
+  PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&camera_params->sensorwidth);
+  PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&camera_params->sensorheight);
+  PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
+  //We write the info in the text buffer
+  gdk_threads_enter();
+  msg = g_strdup_printf ("Camera : %s\nSensor %ldx%ld %ld bits\nGain %lddB to %lddB", DisplayName,camera_params->sensorwidth,camera_params->sensorheight,camera_params->sensorbits,gainmin,gainmax);
+  gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
+  g_free (msg);
+  gdk_threads_leave();
+  //we set the min/max for the adjustments
+  gtk_adjustment_set_lower(camera_params->objects->Exp_adj_gain,gainmin);
+  gtk_adjustment_set_upper(camera_params->objects->Exp_adj_gain,gainmax);
+  gtk_adjustment_set_value(camera_params->objects->Exp_adj_gain,gainmin);
+  PvAttrRangeUint32(camera_params->camera_handler,"ExposureValue",&min,&max);
+  gtk_adjustment_set_lower(camera_params->objects->Exp_adj_time,min/1000+1);
+  gtk_adjustment_set_upper(camera_params->objects->Exp_adj_time,max/1000);
+  gtk_adjustment_set_value(camera_params->objects->Exp_adj_time,min/1000+1);
+  camera_reset_roi(camera_params);
+  PvAttrRangeUint32(camera_params->camera_handler,"BinningX",&min,&max);
+  gtk_adjustment_set_lower(camera_params->objects->Bin_X_adj,min);
+  gtk_adjustment_set_upper(camera_params->objects->Bin_X_adj,max);
+  gtk_adjustment_set_value(camera_params->objects->Bin_X_adj,min);
+  PvAttrRangeUint32(camera_params->camera_handler,"BinningY",&min,&max);
+  gtk_adjustment_set_lower(camera_params->objects->Bin_Y_adj,min);
+  gtk_adjustment_set_upper(camera_params->objects->Bin_Y_adj,max);
+  gtk_adjustment_set_value(camera_params->objects->Bin_Y_adj,min);
+  PvAttrRangeUint32(camera_params->camera_handler,"StreamBytesPerSecond",&min,&max);
+  gtk_adjustment_set_lower(camera_params->objects->Bytes_per_sec_adj,min);
+  gtk_adjustment_set_upper(camera_params->objects->Bytes_per_sec_adj,max);
+  if((min<12000000) && (12000000<max))
+    gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,12000000);
+  else
+    gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,min);
+  PvAttrRangeUint32(camera_params->camera_handler,"AcquisitionFrameCount",&min,&max);
+  gtk_adjustment_set_lower(camera_params->objects->Trig_nbframes_adj,min);
+  gtk_adjustment_set_upper(camera_params->objects->Trig_nbframes_adj,max);
+  gtk_adjustment_set_value(camera_params->objects->Trig_nbframes_adj,min);
+  tPvFloat32 fmin,fmax;
+  PvAttrRangeFloat32(camera_params->camera_handler,"FrameRate",&fmin,&fmax);
+  gtk_adjustment_set_lower(camera_params->objects->Trig_framerate_adj,fmin);
+  gtk_adjustment_set_upper(camera_params->objects->Trig_framerate_adj,fmax);
+  gtk_adjustment_set_value(camera_params->objects->Trig_framerate_adj,fmin);
+  
+  /********************* Camera INIT *******************/
+  //Now we adjust the packet size
+  if(!(ret=PvCaptureAdjustPacketSize(camera_params->camera_handler,9000)))
+  {
+    unsigned long Size;
+    PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);
+    Size-=100;
+    PvAttrUint32Set(camera_params->camera_handler,"PacketSize",Size);
+    PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);
+    gdk_threads_enter();
+    msg = g_strdup_printf ("\nPacket size: %lu",Size);
+    gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
+    g_free (msg);
+    gdk_threads_leave();
+  }
+  else 
+    g_print("Error while setting the packet size: %s\n",PvAPIerror_to_str(ret));
+  //We adjudst the bandwith control mode
+  if(PvAttrStringSet(camera_params->camera_handler,"BandwidthCtrlMode","StreamBytesPerSecond"))
+    g_print("Error while setting the Bandwidth control mode\n");
+  //We set the gain to manual
+  if(PvAttrStringSet(camera_params->camera_handler,"GainMode","Manual"))
+    g_print("Error while setting the gain mode\n");
+  //Exposure mode manual
+  if(PvAttrStringSet(camera_params->camera_handler,"ExposureMode","Manual"))
+    g_print("Error while setting the exposure mode\n");
+  //PixelFormat Monochrome 16 bits
+  if(PvAttrStringSet(camera_params->camera_handler,"PixelFormat","Mono16"))
+    g_print("Error while setting the PixelFormat\n");
+  
+  //We have a good camera handler, we set the camera as being connected
+  camera_params->camera_connected=1;
+  /********************* End of Camera INIT *******************/
+  return 0;
+}
+
 
 
 void camera_update_roi(camera_parameters_t* camera_params)
@@ -216,7 +321,7 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
   camera_set_triggering(camera_params);
   //set the ROI
   camera_update_roi(camera_params);
-
+  
   PvCaptureStart(camera_params->camera_handler);
 
   //We initialize the frame buffer
@@ -255,6 +360,7 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
   //If we didn't set a pixbuf yet, we do it
   if(camera_params->raw_image_pixbuff==NULL)
   {
+    g_print("New pixbuff\n");
     camera_params->raw_image_pixbuff=
       gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
     //We associate this new pixbuf with the image
@@ -264,6 +370,7 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
   else if((width!=gdk_pixbuf_get_width(camera_params->raw_image_pixbuff))||
 	  (height!=gdk_pixbuf_get_height(camera_params->raw_image_pixbuff)))
   {
+    g_print("pixbuff Resize\n");
     //The size of the frame is different from the size of the pixbuff
     //we dereference the pixbuff so the garbage colletor can work
     g_object_unref(camera_params->raw_image_pixbuff);
@@ -303,6 +410,10 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
     }
   }
 
+  //We store the corner of the ROI
+  camera_params->roi_hard_X_lastimage=camera_params->camera_frame.RegionX;
+  camera_params->roi_hard_Y_lastimage=camera_params->camera_frame.RegionY;
+    
   mean/=(height*width);
   msg = g_strdup_printf ("Size: %dx%d \tMean %.3Lf\tNumber: %ld", width, height, mean, camera_params->image_number);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->image_number)),msg,-1);
@@ -315,7 +426,6 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
   time_usec/=1000000;
   time = tv.tv_sec-start_time+time_usec;
   
-
   GtkTreeIter iter;
   gtk_list_store_append (camera_params->objects->statistics_list, &iter);
   gtk_list_store_set (camera_params->objects->statistics_list, &iter,
@@ -323,22 +433,24 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
 		      1, time,
 		      2, (gdouble)mean,
 		      -1);
-  /* With NULL as iter, we get the number of toplevel nodes. */
-  gint rows = gtk_tree_model_iter_n_children(GTK_TREE_MODEL(camera_params->objects->statistics_list), NULL);
-  GtkTreePath *path;
-  /* Now get a path from the index. */
-  path = gtk_tree_path_new_from_indices(rows - 1, -1);
-  gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW (camera_params->objects->stats_treeview), path, NULL, TRUE, 0.0, 0.0); 
-  /* Drop the path, we're done with it. */
-  gtk_tree_path_free(path);
-
+  if(camera_params->autoscroll_chart)
+  {
+    /* With NULL as iter, we get the number of toplevel nodes. */
+    gint rows = gtk_tree_model_iter_n_children(GTK_TREE_MODEL(camera_params->objects->statistics_list), NULL);
+    GtkTreePath *path;
+    /* Now get a path from the index. */
+    path = gtk_tree_path_new_from_indices(rows - 1, -1);
+    gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW (camera_params->objects->stats_treeview), path, NULL, TRUE, 0.0, 0.0); 
+    /* Drop the path, we're done with it. */
+    gtk_tree_path_free(path);
+  }
 
 
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->raw_image);
+  gdk_threads_leave();
   //ready for the next one
   PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,NULL);
-  gdk_threads_leave();
 
 }
 
@@ -363,11 +475,14 @@ void *camera_thread_func(void* arg)
   g_print("Camera thread started\n");
   if((ret=PvInitialize()))
   {
+    gdk_threads_enter();
     g_warning("failed to initialise the Camera API. Error %s\n", PvAPIerror_to_str(ret));
     msg = g_strdup_printf ("Failed to initialise the Camera API. Error %s", PvAPIerror_to_str(ret));
     gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
     gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
     g_free (msg);
+    gdk_threads_leave();
+
     return NULL;
   }
 
@@ -406,94 +521,16 @@ void *camera_thread_func(void* arg)
                                                                     cameraList[0].UniqueId,
                                                                     inet_ntoa(addr),
                                                                     cameraList[0].PermittedAccess & ePvAccessMaster ? "available" : "in use");
+	    gdk_threads_enter();
 	    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
 	    msg = g_strdup_printf ("Camera : %s", cameraList[0].DisplayName);
 	    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
 	    g_free (msg);
-	    //We open the handler for the camera
-	    ret=PvCameraOpen(cameraList[0].UniqueId,ePvAccessMaster,&camera_params->camera_handler);
-	    if(ret!=ePvErrSuccess)
-	    {
-	      g_warning("Error while opening the camera : %s",PvAPIerror_to_str(ret));
-	      gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	      msg = g_strdup_printf ("Camera error : %s",PvAPIerror_to_str(ret));
-	      gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-	      g_free (msg);
-	      usleep(1000000); //some waiting 
+	    gdk_threads_leave();
+
+	    //We init the camera
+	    if(camera_init(camera_params,cameraList[0].UniqueId,cameraList[0].DisplayName))
 	      continue;
-	    }
-	    /****************** Camera information getting ************/
-	    unsigned long gainmin, gainmax, time_min, time_max,min,max;
-	    //ret=PvAttrStringGet(camera_params->camera_handler,"DeviceModelName",ModelName,100,NULL);
-	    PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&camera_params->sensorbits);
-	    PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&camera_params->sensorwidth);
-	    PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&camera_params->sensorheight);
-	    PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
-	    PvAttrRangeUint32(camera_params->camera_handler,"ExposureValue",&time_min,&time_max);
-	    //We write the info in the text buffer
-	    msg = g_strdup_printf ("Camera : %s\nSensor %ldx%ld %ld bits\nGain %lddB to %lddB", cameraList[0].DisplayName,camera_params->sensorwidth,camera_params->sensorheight,camera_params->sensorbits,gainmin,gainmax);
-	    gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
-	    g_free (msg);
-	    //we set the min/max for the adjustments
-	    gtk_adjustment_set_lower(camera_params->objects->Exp_adj_gain,gainmin);
-	    gtk_adjustment_set_upper(camera_params->objects->Exp_adj_gain,gainmax);
-	    gtk_adjustment_set_value(camera_params->objects->Exp_adj_gain,gainmin);
-	    gtk_adjustment_set_lower(camera_params->objects->Exp_adj_time,time_min/1000+1);
-	    gtk_adjustment_set_upper(camera_params->objects->Exp_adj_time,time_max/1000);
-	    gtk_adjustment_set_value(camera_params->objects->Exp_adj_time,time_min/1000+1);
-	    camera_reset_roi(camera_params);
-	    PvAttrRangeUint32(camera_params->camera_handler,"BinningX",&min,&max);
-	    gtk_adjustment_set_lower(camera_params->objects->Bin_X_adj,min);
-	    gtk_adjustment_set_upper(camera_params->objects->Bin_X_adj,max);
-	    gtk_adjustment_set_value(camera_params->objects->Bin_X_adj,min);
-	    PvAttrRangeUint32(camera_params->camera_handler,"BinningY",&min,&max);
-	    gtk_adjustment_set_lower(camera_params->objects->Bin_Y_adj,min);
-	    gtk_adjustment_set_upper(camera_params->objects->Bin_Y_adj,max);
-	    gtk_adjustment_set_value(camera_params->objects->Bin_Y_adj,min);
-	    PvAttrRangeUint32(camera_params->camera_handler,"StreamBytesPerSecond",&min,&max);
-	    gtk_adjustment_set_lower(camera_params->objects->Bytes_per_sec_adj,min);
-            gtk_adjustment_set_upper(camera_params->objects->Bytes_per_sec_adj,max);
-	    if((min<12000000) && (12000000<max))
-	      gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,12000000);
-	    else
-	      gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,min);
-	    PvAttrRangeUint32(camera_params->camera_handler,"AcquisitionFrameCount",&min,&max);
-	    gtk_adjustment_set_lower(camera_params->objects->Trig_nbframes_adj,min);
-	    gtk_adjustment_set_upper(camera_params->objects->Trig_nbframes_adj,max);
-	    gtk_adjustment_set_value(camera_params->objects->Trig_nbframes_adj,min);
-	    tPvFloat32 fmin,fmax;
-	    PvAttrRangeFloat32(camera_params->camera_handler,"FrameRate",&fmin,&fmax);
-	    gtk_adjustment_set_lower(camera_params->objects->Trig_framerate_adj,fmin);
-	    gtk_adjustment_set_upper(camera_params->objects->Trig_framerate_adj,fmax);
-	    gtk_adjustment_set_value(camera_params->objects->Trig_framerate_adj,fmin);
-
-	    /********************* Camera INIT *******************/
-	    //Now we adjust the packet size
-	    if(!PvCaptureAdjustPacketSize(camera_params->camera_handler,9000))
-	      {
-		unsigned long Size;
-		PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);   
-		msg = g_strdup_printf ("\nPacket size: %lu",Size);
-		gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
-		g_free (msg);
-
-	      }
-	    //We adjudst the bandwith control mode
-	    if(PvAttrStringSet(camera_params->camera_handler,"BandwidthCtrlMode","StreamBytesPerSecond"))
-	      g_print("Error while setting the Bandwidth control mode\n");
-	    //We set the gain to manual
-	    if(PvAttrStringSet(camera_params->camera_handler,"GainMode","Manual"))
-	      g_print("Error while setting the gain mode\n");
-	    //Exposure mode manual
-	    if(PvAttrStringSet(camera_params->camera_handler,"ExposureMode","Manual"))
-	      g_print("Error while setting the exposure mode\n");
-	    //PixelFormat Monochrome 16 bits
-	    if(PvAttrStringSet(camera_params->camera_handler,"PixelFormat","Mono16"))
-	      g_print("Error while setting the PixelFormat\n");
-
-	    //We have a good camera handler, we set the camera as being connected
-	    camera_params->camera_connected=1;
-	    /********************* End of Camera INIT *******************/
           }
 	}
 	else
@@ -503,7 +540,7 @@ void *camera_thread_func(void* arg)
 
       }
       usleep(500000); //some waiting 
-    }
+    } //While camera unconnected
     //*******************end of camera init *************************
 
     //If we are getting image and we stopped, we stop the camera
@@ -517,7 +554,7 @@ void *camera_thread_func(void* arg)
     {
        camera_start_grabbing(camera_params);
     }
-
+    //We are getting images
     else if((camera_params->grabbing_images==1) && (camera_params->grab_images==1))
     {
       ret=PvCaptureWaitForFrameDone(camera_params->camera_handler, &camera_params->camera_frame, FRAME_WAIT_TIMEOUT);
@@ -525,18 +562,58 @@ void *camera_thread_func(void* arg)
 	camera_new_image(camera_params, start_time);
       if((ret==ePvErrSuccess)&&(camera_params->camera_frame.Status!=ePvErrSuccess))
       {
-	//Error on the frame, we restart the Grabbing
-	g_print("Frame error : %s\n",PvAPIerror_to_str(camera_params->camera_frame.Status));
-	camera_stop_grabbing(camera_params);
-	camera_start_grabbing(camera_params);
+	gchar *msg; 
+	if(camera_params->camera_frame.Status!=ePvErrCancelled)
+	{
+	  //Error on the frame, we queue another
+	  g_print("frame error %d\n",ret);
+	  msg = g_strdup_printf("Frame error : %s after frame number %ld",PvAPIerror_to_str(camera_params->camera_frame.Status),camera_params->image_number);
+	  gdk_threads_enter();
+	  gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+	  gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+	  g_free (msg);
+	  gdk_threads_leave();
+	  PvCommandRun(camera_params->camera_handler,"AcquisitionAbort");
+	  //PvCommandRun(camera_params->camera_handler,"AcquisitionStop");
+	  //PvCaptureQueueClear(camera_params->camera_handler);
+	  PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,NULL);
+	  //PvCommandRun(camera_params->camera_handler,"AcquisitionStart");
+	}
+	else
+	{
+	  //camera_params->grab_images=0;
+	  //gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(camera_params->objects->acq_toggle),FALSE);
+	  //msg = g_strdup_printf("Frame error : %s after frame number %ld. Acquisition stopped",PvAPIerror_to_str(camera_params->camera_frame.Status),camera_params->image_number);
+	  g_print("cancelled\n");
+	  PvCommandRun(camera_params->camera_handler,"AcquisitionAbort");
+	  PvCaptureQueueClear(camera_params->camera_handler);
+	  PvCaptureEnd(camera_params->camera_handler);
+	  usleep(100000);
+	  PvCaptureStart(camera_params->camera_handler);
+	  PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,NULL);
+
+	  PvCommandRun(camera_params->camera_handler,"AcquisitionStart");
+	}
       }
+      else if((ret!=ePvErrSuccess)&&(ret!=ePvErrTimeout))
+      {
+	gchar *msg; 
+	gdk_threads_enter();
+	msg = g_strdup_printf("Frame waiting error : %s after frame number %ld",PvAPIerror_to_str(ret),camera_params->image_number);
+	gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+	gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+	g_free (msg);
+	gdk_threads_leave();
+      }
+      //if(ret==ePvErrTimeout)
+	//g_print("waiting\n");
     }
-    else
+    else //we are not getting image and we don't want to, we wait for the user to press the button
       usleep(100000); //some waiting 
 
   }
 
-
+  /************ At this point the thread has been asked to shut down **********************/
   if(camera_params->grabbing_images==1)
        camera_stop_grabbing(camera_params);
 

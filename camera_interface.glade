@@ -923,7 +923,18 @@ by clicking on the image
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <object class="GtkToggleButton" id="autoscroll">
+                            <property name="label" translatable="yes">Autoscrolll</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <signal name="toggled" handler="cb_autoscroll_toggled"/>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">1</property>
+                          </packing>
                         </child>
                         <child>
                           <placeholder/>
@@ -1068,7 +1079,55 @@ image processing</property>
                   <object class="GtkVBox" id="vbox10">
                     <property name="visible">True</property>
                     <child>
-                      <placeholder/>
+                      <object class="GtkVBox" id="vbox19">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkLabel" id="label28">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Brightness</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="spinbutton1">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">&#x25CF;</property>
+                            <property name="adjustment">Brightness_adj</property>
+                            <property name="snap_to_ticks">True</property>
+                            <property name="numeric">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHScale" id="hscale1">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="adjustment">Brightness_adj</property>
+                            <property name="restrict_to_fill_level">False</property>
+                            <property name="draw_value">False</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
                     </child>
                     <child>
                       <object class="GtkVBox" id="vbox11">
@@ -1717,5 +1776,11 @@ region of interest</property>
       <action-widget response="0">valid_roi</action-widget>
       <action-widget response="0">cancel_roi</action-widget>
     </action-widgets>
+  </object>
+  <object class="GtkAdjustment" id="Brightness_adj">
+    <property name="lower">-100</property>
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
 </interface>
