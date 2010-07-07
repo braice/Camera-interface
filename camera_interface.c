@@ -42,6 +42,27 @@ camera_parameters_t camera_params={
 
 // MAIN IS AT THE END
 
+void add_to_statusbar(camera_parameters_t *camera_params, int enter_threads, const char *psz_format, ...)
+{
+  va_list args;
+  va_start( args, psz_format );
+  if(enter_threads)
+    gdk_threads_enter();
+  gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+  msg =   g_strdup_vprintf(psz_format,args);
+  gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+  g_free (msg);
+  if(enter_threads)
+    gdk_threads_leave();
+  va_end( args );
+
+}
+
+
+
+
+
+
 G_MODULE_EXPORT gboolean cb_delete_event( GtkWidget *widget,
                               GdkEvent  *event,
                               gpointer   data )
@@ -309,9 +330,13 @@ main( int    argc,
     GError     *error = NULL;
     int ret;
 
+    /* MagickWand Init */
+    MagickWandGenesis();
+
     /* We are using a threaded program we must say it to gtk */
     if( ! g_thread_supported() )
       g_thread_init(NULL);
+
     gdk_threads_init();
 
     /* Obtain gtk's global lock */
@@ -405,6 +430,7 @@ main( int    argc,
     /* Free any allocated data */
     g_slice_free( gui_objects_t, camera_params.objects );
 
+    MagickWandTerminus();
 
     return( 0 );
 }

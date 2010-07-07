@@ -31,8 +31,8 @@
 #include <gtk/gtk.h>
 #include <PvApi.h>
 #include <PvRegIo.h>
+#include <wand/MagickWand.h>
 
-#define ETHERNET_PACKET_SIZE 1341
 #define FRAME_WAIT_TIMEOUT 100
 
 /* Convenience macros for obtaining objects from UI file */
@@ -80,6 +80,12 @@ typedef struct gui_objects_t{
   GtkListStore *statistics_list;
 }gui_objects_t;
 
+typedef struct magickwand_data_t{
+  MagickWand *magick_wand;  //The magickwand data
+  Image *image;             //The imagemagick RAW image
+  Image *background;
+  ExceptionInfo *exception;
+}magickwand_data_t;
 
 #define ROI_CLICK_NONE 0
 #define ROI_CLICK_CORNER1 1
@@ -118,6 +124,8 @@ typedef struct camera_parameters_t{
   int binning_y;
   //Do we autoscroll the chart
   int autoscroll_chart;
+  //The magick wand/imagemagick information
+  magickwand_data_t wand_data;
   //The GUI objects
   gui_objects_t *objects;
 }camera_parameters_t;
@@ -128,5 +136,6 @@ void camera_update_roi(camera_parameters_t* );
 void camera_set_exposure(camera_parameters_t* camera_params);
 void camera_set_triggering(camera_parameters_t* camera_params);
 void camera_reset_roi(camera_parameters_t* camera_params);
+void add_to_statusbar(camera_parameters_t *camera_params, int enter_threads, const char *psz_format, ...)
 
 #endif

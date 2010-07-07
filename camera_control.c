@@ -32,6 +32,10 @@
 #define MAX_CAMERA_LIST 20
 
 void camera_reset_roi(camera_parameters_t* camera_params);
+void camera_new_image(camera_parameters_t* camera_params);
+
+long start_time;
+
 
 char *PvAPIerror_to_str(tPvErr error)
 {
@@ -188,6 +192,19 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   //We have a good camera handler, we set the camera as being connected
   camera_params->camera_connected=1;
   /********************* End of Camera INIT *******************/
+
+#if 0
+  char truc[30];
+  int i;
+  for( i=0;i<30;i++)
+    truc[i]='\0';
+  PvAttrEnumGet(camera_params->camera_handler, "AcqStartTriggerMode",truc, 30, NULL);
+  g_print("AcqStartTriggerMode %s\n",truc);
+  PvAttrEnumGet(camera_params->camera_handler, "AcqEndTriggerMode", truc, 30, NULL);
+  g_print("AcqEndTriggerMode %s\n",truc);
+#endif
+
+
   return 0;
 }
 
@@ -314,6 +331,33 @@ void camera_reset_roi(camera_parameters_t* camera_params)
   gtk_adjustment_set_value(camera_params->objects->ROI_adjust_width,max);
 }
 
+
+void FrameDoneCB(tPvFrame* pFrame)
+{
+  int ret=0;
+  camera_parameters_t* camera_params;
+  camera_params=(camera_parameters_t *)pFrame->Context[0];
+  if(pFrame->Status == ePvErrSuccess)
+    camera_new_image(camera_params);
+  else
+    {
+      gchar *msg; 
+      if(camera_params->camera_frame.Status!=ePvErrCancelled)
+      {
+	//Error on the frame, we queue another
+	g_print("frame error %d\n",ret);
+	msg = g_strdup_printf("Frame error : %s after frame number %ld",PvAPIerror_to_str(camera_params->camera_frame.Status),camera_params->image_number);
+	gdk_threads_enter();
+	gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+	gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+	g_free (msg);
+	gdk_threads_leave();
+	PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,FrameDoneCB);
+      }
+    }
+}
+
+
 void camera_start_grabbing(camera_parameters_t* camera_params)
 {
   g_print("camera_start_grabbing\n");
@@ -331,7 +375,8 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
   camera_params->camera_frame.ImageBufferSize=imageSize;
   camera_params->camera_frame.ImageBuffer=calloc(imageSize,sizeof(char)*2);
   camera_params->camera_frame.AncillaryBufferSize=0;
-  PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,NULL);
+  camera_params->camera_frame.Context[0]=camera_params;
+  PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,FrameDoneCB);
 
   PvCommandRun(camera_params->camera_handler, "AcquisitionStart");
   camera_params->grabbing_images=1;
@@ -345,7 +390,7 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
 
 }
 
-void camera_new_image(camera_parameters_t* camera_params, long start_time)
+void camera_new_image(camera_parameters_t* camera_params)
 {
   gchar *msg;
   int width,height;
@@ -354,6 +399,8 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
 
   gdk_threads_enter();
   camera_params->image_number++;
+
+
 
   //note : in case of redim, unref the pixbuf, create a new one and associate it with the image
   //todo check the size of the pixbuf versus the size of the camera buffer
@@ -383,7 +430,7 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
     gtk_image_set_from_pixbuf(GTK_IMAGE(camera_params->objects->raw_image),camera_params->raw_image_pixbuff);
     g_object_ref(camera_params->raw_image_pixbuff);
   }
-  //copy the pixels
+  /********************** copy the pixels *************************/
   guchar *pixels;
   pixels=gdk_pixbuf_get_pixels(camera_params->raw_image_pixbuff);
 
@@ -413,7 +460,8 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
   //We store the corner of the ROI
   camera_params->roi_hard_X_lastimage=camera_params->camera_frame.RegionX;
   camera_params->roi_hard_Y_lastimage=camera_params->camera_frame.RegionY;
-    
+  
+  /******************* Filling the text buffer and chart ********************/
   mean/=(height*width);
   msg = g_strdup_printf ("Size: %dx%d \tMean %.3Lf\tNumber: %ld", width, height, mean, camera_params->image_number);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->image_number)),msg,-1);
@@ -433,6 +481,8 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
 		      1, time,
 		      2, (gdouble)mean,
 		      -1);
+
+  //if we asked for autoscrolling the chart, we do it
   if(camera_params->autoscroll_chart)
   {
     /* With NULL as iter, we get the number of toplevel nodes. */
@@ -446,11 +496,31 @@ void camera_new_image(camera_parameters_t* camera_params, long start_time)
   }
 
 
+  /********************* ImageMagick *************************/
+
+  //http://www.imagemagick.org/api/constitute.php
+  //http://www.imagemagick.org/api/magick-wand.php
+  //http://www.imagemagick.org/api/magick-wand.php#NewMagickWandFromImage
+  //http://blog.gmane.org/gmane.comp.video.image-magick.devel/month=20060301/page=1
+  //http://studio.imagemagick.org/pipermail/magick-developers/2002-October/001077.html
+  //http://studio.imagemagick.org/pipermail/magick-developers/2002-October/001083.html
+
+  //camera_params->wand_data.image=ConstituteImage(width,height,"I",ShortPixel,camera_params->camera_frame.ImageBuffer,camera_params->wand_data.exception);
+  
+
+
+
+
+
+  /******************* End of ImageMagick *******************/
+
+
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->raw_image);
   gdk_threads_leave();
   //ready for the next one
-  PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,NULL);
+  PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,FrameDoneCB);
+
 
 }
 
@@ -460,7 +530,6 @@ void *camera_thread_func(void* arg)
   camera_parameters_t *camera_params;
   camera_params= (camera_parameters_t *) arg;
   struct timeval tv;
-  long start_time;
 
   tPvCameraInfo   cameraList[MAX_CAMERA_LIST];
   unsigned long   cameraNum = 0;
@@ -505,7 +574,13 @@ void *camera_thread_func(void* arg)
             cameraNum += PvCameraListUnreachable(&cameraList[cameraNum], MAX_CAMERA_LIST-cameraNum, NULL);
 
 
-	g_print("We detected %ld Reachable camera%c (%ld total)\n",cameraRle,cameraRle>1 ? 's':' ',cameraNum);
+	gdk_threads_enter();
+	gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
+	msg = g_strdup_printf ("We detected %ld Reachable camera%c (%ld total)\n",cameraRle,cameraRle>1 ? 's':' ',cameraNum);
+	gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
+	g_free (msg);
+	gdk_threads_leave();
+	usleep(300000); //just to see the message
 	if(cameraNum)
 	{
 	  struct in_addr addr;
@@ -515,15 +590,9 @@ void *camera_thread_func(void* arg)
 	  if((lErr = PvCameraIpSettingsGet(cameraList[0].UniqueId,&Conf)) == ePvErrSuccess)
           {
             addr.s_addr = Conf.CurrentIpAddress;
-	    g_print("First Camera\n");
-            g_print("%s - %8s - Unique ID = % 8ld IP@ = %15s [%s]\n",cameraList[0].SerialString,
-                                                                    cameraList[0].DisplayName,
-                                                                    cameraList[0].UniqueId,
-                                                                    inet_ntoa(addr),
-                                                                    cameraList[0].PermittedAccess & ePvAccessMaster ? "available" : "in use");
 	    gdk_threads_enter();
 	    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	    msg = g_strdup_printf ("Camera : %s", cameraList[0].DisplayName);
+	    msg = g_strdup_printf ("Camera: %s. Serial %s. Unique ID = % 8ld IP@ = %15s [%s]", cameraList[0].DisplayName,cameraList[0].SerialString, cameraList[0].UniqueId, inet_ntoa(addr), cameraList[0].PermittedAccess & ePvAccessMaster ? "available" : "in use");
 	    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
 	    g_free (msg);
 	    gdk_threads_leave();
@@ -535,9 +604,6 @@ void *camera_thread_func(void* arg)
 	}
 	else
 	  usleep(500000); //some waiting 
-
-	//See snap example
-
       }
       usleep(500000); //some waiting 
     } //While camera unconnected
@@ -554,59 +620,10 @@ void *camera_thread_func(void* arg)
     {
        camera_start_grabbing(camera_params);
     }
-    //We are getting images
+    //We are getting images //only waiting because we are using the callback
     else if((camera_params->grabbing_images==1) && (camera_params->grab_images==1))
     {
-      ret=PvCaptureWaitForFrameDone(camera_params->camera_handler, &camera_params->camera_frame, FRAME_WAIT_TIMEOUT);
-      if((ret==ePvErrSuccess)&&(camera_params->camera_frame.Status==ePvErrSuccess))
-	camera_new_image(camera_params, start_time);
-      if((ret==ePvErrSuccess)&&(camera_params->camera_frame.Status!=ePvErrSuccess))
-      {
-	gchar *msg; 
-	if(camera_params->camera_frame.Status!=ePvErrCancelled)
-	{
-	  //Error on the frame, we queue another
-	  g_print("frame error %d\n",ret);
-	  msg = g_strdup_printf("Frame error : %s after frame number %ld",PvAPIerror_to_str(camera_params->camera_frame.Status),camera_params->image_number);
-	  gdk_threads_enter();
-	  gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	  gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-	  g_free (msg);
-	  gdk_threads_leave();
-	  PvCommandRun(camera_params->camera_handler,"AcquisitionAbort");
-	  //PvCommandRun(camera_params->camera_handler,"AcquisitionStop");
-	  //PvCaptureQueueClear(camera_params->camera_handler);
-	  PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,NULL);
-	  //PvCommandRun(camera_params->camera_handler,"AcquisitionStart");
-	}
-	else
-	{
-	  //camera_params->grab_images=0;
-	  //gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(camera_params->objects->acq_toggle),FALSE);
-	  //msg = g_strdup_printf("Frame error : %s after frame number %ld. Acquisition stopped",PvAPIerror_to_str(camera_params->camera_frame.Status),camera_params->image_number);
-	  g_print("cancelled\n");
-	  PvCommandRun(camera_params->camera_handler,"AcquisitionAbort");
-	  PvCaptureQueueClear(camera_params->camera_handler);
-	  PvCaptureEnd(camera_params->camera_handler);
-	  usleep(100000);
-	  PvCaptureStart(camera_params->camera_handler);
-	  PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,NULL);
-
-	  PvCommandRun(camera_params->camera_handler,"AcquisitionStart");
-	}
-      }
-      else if((ret!=ePvErrSuccess)&&(ret!=ePvErrTimeout))
-      {
-	gchar *msg; 
-	gdk_threads_enter();
-	msg = g_strdup_printf("Frame waiting error : %s after frame number %ld",PvAPIerror_to_str(ret),camera_params->image_number);
-	gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-	g_free (msg);
-	gdk_threads_leave();
-      }
-      //if(ret==ePvErrTimeout)
-	//g_print("waiting\n");
+      usleep(100000); //some waiting 
     }
     else //we are not getting image and we don't want to, we wait for the user to press the button
       usleep(100000); //some waiting 
