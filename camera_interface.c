@@ -45,6 +45,7 @@ camera_parameters_t camera_params={
 void add_to_statusbar(camera_parameters_t *camera_params, int enter_threads, const char *psz_format, ...)
 {
   va_list args;
+  gchar *msg;
   va_start( args, psz_format );
   if(enter_threads)
     gdk_threads_enter();
@@ -78,7 +79,6 @@ G_MODULE_EXPORT gboolean cb_delete_event( GtkWidget *widget,
 
   /* Change TRUE to FALSE and the main window will be destroyed with
    * a "delete-event". */
-
   return FALSE;
 }
 
@@ -228,8 +228,6 @@ G_MODULE_EXPORT void cb_Eposure_changed( GtkEditable *editable, gpointer   data 
 //Callback for the acquisition button is toggled
 G_MODULE_EXPORT void cb_Acquire_toggled(GtkToggleButton *togglebutton,gpointer   data )
 {
-
-  g_print("cb_Acquire_toggled\n");
 
   if(gtk_toggle_button_get_active(togglebutton)==TRUE)
     camera_params.grab_images=1;

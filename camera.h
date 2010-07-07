@@ -136,6 +136,6 @@ void camera_update_roi(camera_parameters_t* );
 void camera_set_exposure(camera_parameters_t* camera_params);
 void camera_set_triggering(camera_parameters_t* camera_params);
 void camera_reset_roi(camera_parameters_t* camera_params);
-void add_to_statusbar(camera_parameters_t *camera_params, int enter_threads, const char *psz_format, ...)
+void add_to_statusbar(camera_parameters_t *camera_params, int enter_threads, const char *psz_format, ...);
 
 #endif

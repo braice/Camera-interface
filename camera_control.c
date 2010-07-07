@@ -103,12 +103,7 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   if(ret!=ePvErrSuccess)
   {
     g_warning("Error while opening the camera : %s",PvAPIerror_to_str(ret));
-    gdk_threads_enter();
-    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-    msg = g_strdup_printf ("Camera error : %s",PvAPIerror_to_str(ret));
-    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-    g_free (msg);
-    gdk_threads_leave();
+    add_to_statusbar(camera_params, 1, "Camera error : %s",PvAPIerror_to_str(ret));
     usleep(1000000); //some waiting 
     return 1;
   }
@@ -235,19 +230,18 @@ void camera_update_roi(camera_parameters_t* camera_params)
 
 void camera_stop_grabbing(camera_parameters_t* camera_params)
 {
+  int ret;
   g_print("camera_stop_grabbing\n");
-  PvCommandRun(camera_params->camera_handler,"AcquisitionStop");
-  PvCaptureQueueClear(camera_params->camera_handler);
+  ret=PvCommandRun(camera_params->camera_handler,"AcquisitionStop");
+  if(ret)
+    add_to_statusbar(camera_params, 0, "Error while stopping the acquisition %s",PvAPIerror_to_str(ret));
   PvCaptureEnd(camera_params->camera_handler);
+  PvCaptureQueueClear(camera_params->camera_handler);
   //We free the image buffer
   free(camera_params->camera_frame.ImageBuffer);
   camera_params->grabbing_images=0;
-  gchar *msg; 
-  gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-  msg = g_strdup_printf ("Acquisition Stopped");
-  gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-  g_free (msg);
-
+  if(!ret)
+    add_to_statusbar(camera_params, 0, "Acquisition Stopped");
 }
 
 void camera_set_triggering(camera_parameters_t* camera_params)
@@ -334,24 +328,16 @@ void camera_reset_roi(camera_parameters_t* camera_params)
 
 void FrameDoneCB(tPvFrame* pFrame)
 {
-  int ret=0;
   camera_parameters_t* camera_params;
   camera_params=(camera_parameters_t *)pFrame->Context[0];
   if(pFrame->Status == ePvErrSuccess)
     camera_new_image(camera_params);
   else
     {
-      gchar *msg; 
       if(camera_params->camera_frame.Status!=ePvErrCancelled)
       {
 	//Error on the frame, we queue another
-	g_print("frame error %d\n",ret);
-	msg = g_strdup_printf("Frame error : %s after frame number %ld",PvAPIerror_to_str(camera_params->camera_frame.Status),camera_params->image_number);
-	gdk_threads_enter();
-	gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-	g_free (msg);
-	gdk_threads_leave();
+	add_to_statusbar(camera_params, 1, "Frame error : %s after frame number %ld",PvAPIerror_to_str(camera_params->camera_frame.Status),camera_params->image_number);
 	PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,FrameDoneCB);
       }
     }
@@ -380,13 +366,7 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
 
   PvCommandRun(camera_params->camera_handler, "AcquisitionStart");
   camera_params->grabbing_images=1;
-  gchar *msg;
-  gdk_threads_enter();
-  gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-  msg = g_strdup_printf ("Acquisition Started");
-  gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-  g_free (msg);
-  gdk_threads_leave();
+  add_to_statusbar(camera_params, 1, "Acquisition Started");
 
 }
 
@@ -536,7 +516,6 @@ void *camera_thread_func(void* arg)
   unsigned long   cameraRle;
 
   int ret;
-  gchar *msg;
   //We record the starting time
   gettimeofday (&tv, (struct timezone *) NULL);
   start_time = tv.tv_sec;
@@ -544,14 +523,7 @@ void *camera_thread_func(void* arg)
   g_print("Camera thread started\n");
   if((ret=PvInitialize()))
   {
-    gdk_threads_enter();
-    g_warning("failed to initialise the Camera API. Error %s\n", PvAPIerror_to_str(ret));
-    msg = g_strdup_printf ("Failed to initialise the Camera API. Error %s", PvAPIerror_to_str(ret));
-    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-    g_free (msg);
-    gdk_threads_leave();
-
+    add_to_statusbar(camera_params, 1, "Failed to initialise the Camera API. Error %s", PvAPIerror_to_str(ret));
     return NULL;
   }
 
@@ -574,12 +546,7 @@ void *camera_thread_func(void* arg)
             cameraNum += PvCameraListUnreachable(&cameraList[cameraNum], MAX_CAMERA_LIST-cameraNum, NULL);
 
 
-	gdk_threads_enter();
-	gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	msg = g_strdup_printf ("We detected %ld Reachable camera%c (%ld total)\n",cameraRle,cameraRle>1 ? 's':' ',cameraNum);
-	gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-	g_free (msg);
-	gdk_threads_leave();
+	add_to_statusbar(camera_params, 1, "We detected %ld Reachable camera%c (%ld total)",cameraRle,cameraRle>1 ? 's':' ',cameraNum);
 	usleep(300000); //just to see the message
 	if(cameraNum)
 	{
@@ -590,12 +557,7 @@ void *camera_thread_func(void* arg)
 	  if((lErr = PvCameraIpSettingsGet(cameraList[0].UniqueId,&Conf)) == ePvErrSuccess)
           {
             addr.s_addr = Conf.CurrentIpAddress;
-	    gdk_threads_enter();
-	    gtk_statusbar_pop (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0);
-	    msg = g_strdup_printf ("Camera: %s. Serial %s. Unique ID = % 8ld IP@ = %15s [%s]", cameraList[0].DisplayName,cameraList[0].SerialString, cameraList[0].UniqueId, inet_ntoa(addr), cameraList[0].PermittedAccess & ePvAccessMaster ? "available" : "in use");
-	    gtk_statusbar_push (GTK_STATUSBAR(camera_params->objects->main_status_bar), 0, msg);
-	    g_free (msg);
-	    gdk_threads_leave();
+	    add_to_statusbar(camera_params, 1, "Camera: %s. Serial %s. Unique ID = % 8ld IP@ = %15s [%s]", cameraList[0].DisplayName,cameraList[0].SerialString, cameraList[0].UniqueId, inet_ntoa(addr), cameraList[0].PermittedAccess & ePvAccessMaster ? "available" : "in use");
 
 	    //We init the camera
 	    if(camera_init(camera_params,cameraList[0].UniqueId,cameraList[0].DisplayName))
@@ -629,14 +591,17 @@ void *camera_thread_func(void* arg)
       usleep(100000); //some waiting 
 
   }
+  g_print("Camera thread stopping\n");
 
   /************ At this point the thread has been asked to shut down **********************/
   if(camera_params->grabbing_images==1)
        camera_stop_grabbing(camera_params);
+  g_print("Camera thread stopping 2\n");
 
   if(camera_params->camera_connected)
     PvCameraClose(camera_params->camera_handler);
   // uninit the API
+  g_print("Camera thread stopping 3\n");
   PvUnInitialize();
   gettimeofday (&tv, (struct timezone *) NULL);
 
