@@ -160,7 +160,6 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   {
     unsigned long Size;
     PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);
-    Size-=100;
     PvAttrUint32Set(camera_params->camera_handler,"PacketSize",Size);
     PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);
     gdk_threads_enter();
