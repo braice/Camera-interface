@@ -24,6 +24,7 @@
 
  
 #include <errno.h>
+#include <string.h>
 #include "camera.h"
 
 camera_parameters_t camera_params={
@@ -320,6 +321,66 @@ G_MODULE_EXPORT void cb_list_reset_clicked(GtkButton *button)
 }
 
 
+//Saving the actual list
+G_MODULE_EXPORT void cb_save_list_clicked(GtkButton *button)
+{
+  gtk_widget_show( camera_params.objects->listsavedialog );
+
+}
+
+G_MODULE_EXPORT void cb_list_save_cancel_clicked(GtkButton *button)
+{
+  gtk_widget_hide( camera_params.objects->listsavedialog );
+}
+
+//Saving the list to a file
+G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
+{
+  char *filename;
+  FILE *file;
+  filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (camera_params.objects->listsavedialog));
+  g_print("Filename %s\n",filename);
+  GtkTreeIter iter;
+  //Check if the list is empty
+  if(gtk_tree_model_get_iter_first (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter)==TRUE)
+  {
+
+    //we get the data from the list
+    gdouble time,mean;
+    gint image_number;
+    int row=0;
+    file = fopen (filename, "w");
+    if (file == NULL)
+    {
+      gtk_widget_hide( camera_params.objects->listsavedialog );
+      add_to_statusbar(&camera_params, 0, "Error openning %s : %s", filename,strerror (errno));
+      g_free (filename);
+      return;
+    }
+
+    fprintf(file,"#image_number\ttime\tmean\n");
+    do{
+      gtk_tree_model_get (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter,
+			  0, &image_number,
+			  1, &time,
+			  2, &mean,
+			  -1);
+      //g_print("Row %d image_number %d time %f mean %f\n",row, image_number, time, mean);
+      fprintf(file,"%d\t%f\t\t%f\n",image_number, time, mean);
+      row++;
+    }while(TRUE==gtk_tree_model_iter_next (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter));
+    fclose (file);
+  }
+  else
+  {
+      add_to_statusbar(&camera_params, 0, "Empty list, cannot save");
+  }
+  g_free (filename);
+  gtk_widget_hide( camera_params.objects->listsavedialog );
+}
+
+
+
 int
 main( int    argc,
       char **argv )
@@ -375,6 +436,7 @@ main( int    argc,
     GW( framerate_trig );
     GW( directorychooserdialog );
     GW( imagesavedialog );
+    GW( listsavedialog );
     GW( no_image_dialog );
     GW( ROI_confirm_dialog );
     GW( ROI_confirm_dialog_text );

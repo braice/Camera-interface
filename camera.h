@@ -61,6 +61,7 @@ typedef struct gui_objects_t{
   GtkWidget *framerate_trig;
   GtkWidget *directorychooserdialog;
   GtkWidget *imagesavedialog;
+  GtkWidget *listsavedialog;
   GtkWidget *no_image_dialog;
   GtkWidget *ROI_confirm_dialog;
   GtkWidget *ROI_confirm_dialog_text;
