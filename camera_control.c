@@ -111,6 +111,8 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   unsigned long gainmin, gainmax,min,max;
   //ret=PvAttrStringGet(camera_params->camera_handler,"DeviceModelName",ModelName,100,NULL);
   PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&camera_params->sensorbits);
+  gtk_adjustment_set_upper(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
+  gtk_adjustment_set_value(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
   PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&camera_params->sensorwidth);
   PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&camera_params->sensorheight);
   PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
@@ -473,7 +475,12 @@ void camera_new_image(camera_parameters_t* camera_params)
     /* Drop the path, we're done with it. */
     gtk_tree_path_free(path);
   }
-
+  /********************** mean bar ***************************/
+  gdouble fraction;
+  fraction=(mean-gtk_adjustment_get_value(camera_params->objects->min_meanbar))/(gtk_adjustment_get_value(camera_params->objects->max_meanbar)-gtk_adjustment_get_value(camera_params->objects->min_meanbar));
+  fraction=fraction<0?0:fraction;
+  fraction=fraction>1?1:fraction;
+  gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->mean_bar),fraction);
 
   /********************* ImageMagick *************************/
 

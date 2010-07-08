@@ -67,6 +67,7 @@ typedef struct gui_objects_t{
   GtkWidget *ROI_confirm_dialog_text;
   GtkWidget *stats_treeview;
   GtkWidget *acq_toggle;
+  GtkWidget *mean_bar;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -78,6 +79,8 @@ typedef struct gui_objects_t{
   GtkAdjustment *Bytes_per_sec_adj;
   GtkAdjustment *Trig_nbframes_adj;
   GtkAdjustment *Trig_framerate_adj;
+  GtkAdjustment *max_meanbar;
+  GtkAdjustment *min_meanbar;
   GtkListStore *statistics_list;
 }gui_objects_t;
 

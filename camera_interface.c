@@ -27,6 +27,9 @@
 #include <string.h>
 #include "camera.h"
 
+//http://sourceforge.net/projects/gapcmon/files/
+
+
 camera_parameters_t camera_params={
   .image_number = 0,
   .camera_thread_shutdown = 0,
@@ -442,6 +445,7 @@ main( int    argc,
     GW( ROI_confirm_dialog_text );
     GW( stats_treeview );
     GW( acq_toggle );
+    GW( mean_bar );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -456,6 +460,8 @@ main( int    argc,
     GA( Bytes_per_sec_adj );
     GA( Trig_nbframes_adj);
     GA( Trig_framerate_adj);
+    GA( min_meanbar );
+    GA( max_meanbar );
 #undef GA
 #define GL( name ) CH_GET_LIST_STORE( builder, name, data )
     GL( statistics_list );
