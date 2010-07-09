@@ -290,6 +290,11 @@ G_MODULE_EXPORT void cb_image_save_ok_clicked(GtkButton *button)
   filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (camera_params.objects->imagesavedialog));
   g_print("Filename %s\n",filename);
   g_free (filename);
+  //IsMagickWand
+  //CloneMagickWand
+  //MagickLinearStretchImage(camera_params->wand_data.magick_wand,0,1<<((int)camera_params.sensorbits));
+  //MagickSetImageFormat
+  //MagickWriteImage
   //http://library.gnome.org/devel/gdk-pixbuf/unstable/gdk-pixbuf3-file-saving.html#gdk-pixbuf-save
   gtk_widget_hide( camera_params.objects->imagesavedialog );
 }
@@ -394,6 +399,9 @@ main( int    argc,
 
     /* MagickWand Init */
     MagickWandGenesis();
+    camera_params.wand_data.magick_wand=NewMagickWand();
+    camera_params.wand_data.raw_magick_wand=NewMagickWand();
+    //camera_params.wand_data.exception=AcquireExceptionInfo();
 
     /* We are using a threaded program we must say it to gtk */
     if( ! g_thread_supported() )
@@ -429,6 +437,7 @@ main( int    argc,
     GW( camera_text );
     GW( image_number );
     GW( raw_image );
+    GW( processed_image );
     GW( ext_trig );
     GW( trig_mult );
     GW( trig_single );
@@ -462,6 +471,9 @@ main( int    argc,
     GA( Trig_framerate_adj);
     GA( min_meanbar );
     GA( max_meanbar );
+    GA( Brightness_adj );
+    GA( Contrast_adj );
+    GA( soft_angle_adj );
 #undef GA
 #define GL( name ) CH_GET_LIST_STORE( builder, name, data )
     GL( statistics_list );
@@ -496,6 +508,9 @@ main( int    argc,
     /* Free any allocated data */
     g_slice_free( gui_objects_t, camera_params.objects );
 
+    //DestroyExceptionInfo(camera_params.wand_data.exception);
+    DestroyMagickWand(camera_params.wand_data.raw_magick_wand);
+    DestroyMagickWand(camera_params.wand_data.magick_wand);
     MagickWandTerminus();
 
     return( 0 );

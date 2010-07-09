@@ -51,6 +51,7 @@ typedef struct gui_objects_t{
   GtkWidget *camera_text;
   GtkWidget *image_number;
   GtkWidget *raw_image;
+  GtkWidget *processed_image;
   GtkWidget *ext_trig;
   GtkWidget *trig_mult;
   GtkWidget *trig_single;
@@ -81,14 +82,18 @@ typedef struct gui_objects_t{
   GtkAdjustment *Trig_framerate_adj;
   GtkAdjustment *max_meanbar;
   GtkAdjustment *min_meanbar;
+  GtkAdjustment *Brightness_adj;
+  GtkAdjustment *Contrast_adj;
+  GtkAdjustment *soft_angle_adj;
   GtkListStore *statistics_list;
 }gui_objects_t;
 
 typedef struct magickwand_data_t{
   MagickWand *magick_wand;  //The magickwand data
-  Image *image;             //The imagemagick RAW image
-  Image *background;
-  ExceptionInfo *exception;
+  MagickWand *raw_magick_wand;  //The magickwand data
+  //Image *image;             //The imagemagick RAW image
+  //Image *background;
+  //ExceptionInfo *exception;
 }magickwand_data_t;
 
 #define ROI_CLICK_NONE 0
@@ -101,6 +106,7 @@ typedef struct camera_parameters_t{
   tPvFrame camera_frame;
   //PixBuff
   GdkPixbuf *raw_image_pixbuff; 
+  GdkPixbuf *processed_image_pixbuff; 
   //sensor info
   unsigned long sensorbits;
   unsigned long sensorwidth;
@@ -142,4 +148,7 @@ void camera_set_triggering(camera_parameters_t* camera_params);
 void camera_reset_roi(camera_parameters_t* camera_params);
 void add_to_statusbar(camera_parameters_t *camera_params, int enter_threads, const char *psz_format, ...);
 
+void imagemagick_get_image(camera_parameters_t* camera_params);
+void imagemagick_process_image(camera_parameters_t* camera_params);
+void imagemagick_display_image(camera_parameters_t* camera_params);
 #endif

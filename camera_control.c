@@ -111,6 +111,7 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   unsigned long gainmin, gainmax,min,max;
   //ret=PvAttrStringGet(camera_params->camera_handler,"DeviceModelName",ModelName,100,NULL);
   PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&camera_params->sensorbits);
+  gtk_adjustment_set_upper(camera_params->objects->min_meanbar,1<<((int)camera_params->sensorbits));
   gtk_adjustment_set_upper(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
   gtk_adjustment_set_value(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
   PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&camera_params->sensorwidth);
@@ -484,22 +485,15 @@ void camera_new_image(camera_parameters_t* camera_params)
 
   /********************* ImageMagick *************************/
 
-  //http://www.imagemagick.org/api/constitute.php
-  //http://www.imagemagick.org/api/magick-wand.php
-  //http://www.imagemagick.org/api/magick-wand.php#NewMagickWandFromImage
-  //http://blog.gmane.org/gmane.comp.video.image-magick.devel/month=20060301/page=1
-  //http://studio.imagemagick.org/pipermail/magick-developers/2002-October/001077.html
-  //http://studio.imagemagick.org/pipermail/magick-developers/2002-October/001083.html
-
-  //camera_params->wand_data.image=ConstituteImage(width,height,"I",ShortPixel,camera_params->camera_frame.ImageBuffer,camera_params->wand_data.exception);
-  
-
-
+  imagemagick_get_image(camera_params);
+  gdk_threads_leave();
+  imagemagick_process_image(camera_params);
+  gdk_threads_enter();
+  imagemagick_display_image(camera_params);
 
 
 
   /******************* End of ImageMagick *******************/
-
 
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->raw_image);
