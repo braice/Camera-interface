@@ -14,7 +14,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *                                                                                                                                         
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139,
@@ -69,6 +69,14 @@ typedef struct gui_objects_t{
   GtkWidget *stats_treeview;
   GtkWidget *acq_toggle;
   GtkWidget *mean_bar;
+  GtkWidget *soft_rotate_image;
+  GtkWidget *soft_autolevel;
+  GtkWidget *soft_autogamma;
+  GtkWidget *soft_magn_x2;
+  GtkWidget *soft_magn_x4;
+  GtkWidget *soft_magn_x8;
+  GtkWidget *soft_cut_img;
+  GtkWidget *soft_image_text;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -82,9 +90,15 @@ typedef struct gui_objects_t{
   GtkAdjustment *Trig_framerate_adj;
   GtkAdjustment *max_meanbar;
   GtkAdjustment *min_meanbar;
-  GtkAdjustment *Brightness_adj;
-  GtkAdjustment *Contrast_adj;
+  GtkAdjustment *soft_brightness_adj;
+  GtkAdjustment *soft_contrast_adj;
   GtkAdjustment *soft_angle_adj;
+  GtkAdjustment *soft_level_min_adj;
+  GtkAdjustment *soft_level_max_adj;
+  GtkAdjustment *ROI_soft_adjust_width;
+  GtkAdjustment *ROI_soft_adjust_height;
+  GtkAdjustment *ROI_soft_adjust_x;
+  GtkAdjustment *ROI_soft_adjust_y;
   GtkListStore *statistics_list;
 }gui_objects_t;
 
@@ -151,4 +165,5 @@ void add_to_statusbar(camera_parameters_t *camera_params, int enter_threads, con
 void imagemagick_get_image(camera_parameters_t* camera_params);
 void imagemagick_process_image(camera_parameters_t* camera_params);
 void imagemagick_display_image(camera_parameters_t* camera_params);
+void update_soft_val(camera_parameters_t* camera_params);
 #endif

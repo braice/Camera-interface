@@ -14,7 +14,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *                                                                                                                                         
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139,
@@ -24,7 +24,6 @@
 
 #include "camera.h"
 
-  //http://www.imagemagick.org/api/constitute.php
   //http://www.imagemagick.org/api/magick-wand.php
   //http://www.imagemagick.org/api/magick-wand.php#NewMagickWandFromImage
   //http://blog.gmane.org/gmane.comp.video.image-magick.devel/month=20060301/page=1
@@ -54,6 +53,14 @@
   description=(char *) MagickRelinquishMemory(description); \
 }
 
+void update_soft_val(camera_parameters_t* camera_params)
+{
+  if(camera_params->image_number==0)
+    return;
+  imagemagick_process_image(camera_params);
+  imagemagick_display_image(camera_params);
+}
+
 void imagemagick_get_image(camera_parameters_t* camera_params)
 {
   MagickBooleanType status;
@@ -73,29 +80,76 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
   camera_params->wand_data.magick_wand=DestroyMagickWand(camera_params->wand_data.magick_wand);
   camera_params->wand_data.magick_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
   MagickSetImageDepth(camera_params->wand_data.magick_wand,16);
-  MagickLevelImage(camera_params->wand_data.magick_wand, 0, 1, 1<<((int)camera_params->sensorbits));
+
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autolevel))==FALSE)
+  {
+    MagickLevelImage(camera_params->wand_data.magick_wand, gtk_adjustment_get_value(camera_params->objects->soft_level_min_adj), 1, gtk_adjustment_get_value(camera_params->objects->soft_level_max_adj));
   //MagickLinearStretchImage(camera_params->wand_data.magick_wand,0,1<<((int)camera_params->sensorbits));
   //MagickLinearStretchImage(camera_params->wand_data.magick_wand,0,4096);
 
-  //g_print("%d\n",1<<((int)camera_params->sensorbits));
-  MagickBrightnessContrastImage(camera_params->wand_data.magick_wand,gtk_adjustment_get_value(camera_params->objects->Brightness_adj),gtk_adjustment_get_value(camera_params->objects->Contrast_adj));
+    MagickBrightnessContrastImage(camera_params->wand_data.magick_wand,gtk_adjustment_get_value(camera_params->objects->soft_brightness_adj),gtk_adjustment_get_value(camera_params->objects->soft_contrast_adj));
+  }
 
-  PixelWand *black;
-  black = NewPixelWand();
-  PixelSetColor(black, "black");
-  status=MagickRotateImage( camera_params->wand_data.magick_wand, black, gtk_adjustment_get_value(camera_params->objects->soft_angle_adj));
-  if (status == MagickFalse)
-    ThrowWandException(camera_params->wand_data.magick_wand);
-  DestroyPixelWand(black);
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autolevel))==TRUE)
+  {
+    MagickAutoLevelImage(camera_params->wand_data.magick_wand);
+  }
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autogamma))==TRUE)
+  {
+    MagickAutoGammaImage(camera_params->wand_data.magick_wand);
+  }
 
-  // MagickAutoLevelImage(camera_params->wand_data.magick_wand);
-  // MagickCropImage
+
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_magn_x2))==TRUE)
+    MagickMagnifyImage(camera_params->wand_data.magick_wand);
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_magn_x4))==TRUE)
+  {
+    MagickMagnifyImage(camera_params->wand_data.magick_wand);
+    MagickMagnifyImage(camera_params->wand_data.magick_wand);
+  }
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_magn_x8))==TRUE)
+  {
+    MagickMagnifyImage(camera_params->wand_data.magick_wand);
+    MagickMagnifyImage(camera_params->wand_data.magick_wand);
+    MagickMagnifyImage(camera_params->wand_data.magick_wand);
+  }
+
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_rotate_image))==TRUE)
+  {
+    PixelWand *black;
+    black = NewPixelWand();
+    PixelSetColor(black, "black");
+    status=MagickRotateImage( camera_params->wand_data.magick_wand, black, gtk_adjustment_get_value(camera_params->objects->soft_angle_adj));
+    if (status == MagickFalse)
+      ThrowWandException(camera_params->wand_data.magick_wand);
+    DestroyPixelWand(black);
+  }
+
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_cut_img))==TRUE)
+  {
+    MagickCropImage( camera_params->wand_data.magick_wand,
+                     gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_width),
+                     gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_height),
+                     gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_x),
+                     gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_y));
+  }
+
+  double mean,std;
+  gchar *msg;
+  MagickGetImageChannelMean(camera_params->wand_data.magick_wand,AllChannels,&mean,&std);
+  msg = g_strdup_printf ("Size: %ldx%ld\tMean %.3lf\tStd: %.3lf",
+                           MagickGetImageWidth(camera_params->wand_data.magick_wand),
+                           MagickGetImageHeight(camera_params->wand_data.magick_wand),
+                           mean, std);
+  gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_image_text)),msg,-1);
+  g_free (msg);
+  //gtk_list_store_set avec le iter qui va bien et uniquement sur une valeur
+
+
+
   // MagickGammaImage
-  // MagickGetImageChannelMean // MagickGetImageChannelMean(cutted_wand,AllChannels,&mean,&std);
   // MagickGetImageRegion
-  // MagickMagnifyImage
   // MagickMinifyImage
-  // MagickNormalizeImage
   // MagickScaleImage
 }
 

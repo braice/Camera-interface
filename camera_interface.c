@@ -14,7 +14,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *                                                                                                                                         
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139,
@@ -387,6 +387,32 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
   gtk_widget_hide( camera_params.objects->listsavedialog );
 }
 
+/***************** Software image processing ***********/
+
+G_MODULE_EXPORT void cb_soft_level_reset_clicked(GtkButton *button)
+{
+  gtk_adjustment_set_value(camera_params.objects->soft_level_max_adj,1<<((int)camera_params.sensorbits));
+  gtk_adjustment_set_value(camera_params.objects->soft_level_min_adj,0);
+  update_soft_val(&camera_params);
+}
+
+G_MODULE_EXPORT void cb_soft_brightcont_reset_clicked(GtkButton *button)
+{
+  gtk_adjustment_set_value(camera_params.objects->soft_brightness_adj,0);
+  gtk_adjustment_set_value(camera_params.objects->soft_contrast_adj,0);
+  update_soft_val(&camera_params);
+}
+
+G_MODULE_EXPORT void cb_soft_editable_changed( GtkEditable *editable, gpointer   data )
+{
+    update_soft_val(&camera_params);
+}
+
+G_MODULE_EXPORT void cb_soft_togglebutton_toggled(GtkToggleButton *togglebutton,gpointer   data )
+{
+    update_soft_val(&camera_params);
+}
+
 
 
 int
@@ -455,6 +481,14 @@ main( int    argc,
     GW( stats_treeview );
     GW( acq_toggle );
     GW( mean_bar );
+    GW( soft_rotate_image );
+    GW( soft_autolevel );
+    GW( soft_autogamma );
+    GW( soft_magn_x2 );
+    GW( soft_magn_x4 );
+    GW( soft_magn_x8 );
+    GW( soft_cut_img );
+    GW( soft_image_text );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -471,9 +505,15 @@ main( int    argc,
     GA( Trig_framerate_adj);
     GA( min_meanbar );
     GA( max_meanbar );
-    GA( Brightness_adj );
-    GA( Contrast_adj );
+    GA( soft_brightness_adj );
+    GA( soft_contrast_adj );
     GA( soft_angle_adj );
+    GA( soft_level_min_adj );
+    GA( soft_level_max_adj );
+    GA( ROI_soft_adjust_width );
+    GA( ROI_soft_adjust_height );
+    GA( ROI_soft_adjust_x );
+    GA( ROI_soft_adjust_y );
 #undef GA
 #define GL( name ) CH_GET_LIST_STORE( builder, name, data )
     GL( statistics_list );

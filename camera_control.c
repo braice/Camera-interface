@@ -14,7 +14,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *                                                                                                                                         
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139,
@@ -114,6 +114,9 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   gtk_adjustment_set_upper(camera_params->objects->min_meanbar,1<<((int)camera_params->sensorbits));
   gtk_adjustment_set_upper(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
   gtk_adjustment_set_value(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
+  gtk_adjustment_set_upper(camera_params->objects->soft_level_min_adj,1<<((int)camera_params->sensorbits));
+  gtk_adjustment_set_upper(camera_params->objects->soft_level_max_adj,1<<((int)camera_params->sensorbits));
+  gtk_adjustment_set_value(camera_params->objects->soft_level_max_adj,1<<((int)camera_params->sensorbits));
   PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&camera_params->sensorwidth);
   PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&camera_params->sensorheight);
   PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
