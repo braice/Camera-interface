@@ -77,6 +77,12 @@ typedef struct gui_objects_t{
   GtkWidget *soft_magn_x8;
   GtkWidget *soft_cut_img;
   GtkWidget *soft_image_text;
+  GtkWidget *soft_display_mean_roi1;
+  GtkWidget *soft_compute_mean_roi1;
+  GtkWidget *soft_display_mean_roi2;
+  GtkWidget *soft_compute_mean_roi2;
+  GtkWidget *soft_background_info_text;
+  GtkWidget *soft_background_button;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -99,12 +105,22 @@ typedef struct gui_objects_t{
   GtkAdjustment *ROI_soft_adjust_height;
   GtkAdjustment *ROI_soft_adjust_x;
   GtkAdjustment *ROI_soft_adjust_y;
+  GtkAdjustment *ROI_soft_mean_adjust_x1;
+  GtkAdjustment *ROI_soft_mean_adjust_width1;
+  GtkAdjustment *ROI_soft_mean_adjust_y1;
+  GtkAdjustment *ROI_soft_mean_adjust_height1;
+  GtkAdjustment *ROI_soft_mean_adjust_x2;
+  GtkAdjustment *ROI_soft_mean_adjust_width2;
+  GtkAdjustment *ROI_soft_mean_adjust_y2;
+  GtkAdjustment *ROI_soft_mean_adjust_height2;
   GtkListStore *statistics_list;
 }gui_objects_t;
 
 typedef struct magickwand_data_t{
-  MagickWand *magick_wand;  //The magickwand data
+  MagickWand *processed_magick_wand;  //The magickwand data
+  MagickWand *display_magick_wand;  //The magickwand data
   MagickWand *raw_magick_wand;  //The magickwand data
+  MagickWand *background_wand;
   //Image *image;             //The imagemagick RAW image
   //Image *background;
   //ExceptionInfo *exception;
@@ -148,6 +164,11 @@ typedef struct camera_parameters_t{
   int binning_y;
   //Do we autoscroll the chart
   int autoscroll_chart;
+  //Is the iterator for the chart ok ?
+  int list_store_iter_ok;
+  GtkTreeIter list_iter;
+  //Background
+  int background_set;
   //The magick wand/imagemagick information
   magickwand_data_t wand_data;
   //The GUI objects
@@ -163,7 +184,9 @@ void camera_reset_roi(camera_parameters_t* camera_params);
 void add_to_statusbar(camera_parameters_t *camera_params, int enter_threads, const char *psz_format, ...);
 
 void imagemagick_get_image(camera_parameters_t* camera_params);
-void imagemagick_process_image(camera_parameters_t* camera_params);
+void imagemagick_process_image(camera_parameters_t* camera_params, int threads_enter);
 void imagemagick_display_image(camera_parameters_t* camera_params);
 void update_soft_val(camera_parameters_t* camera_params);
+void imagemagick_set_bg(camera_parameters_t* camera_params);
+
 #endif

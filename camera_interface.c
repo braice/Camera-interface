@@ -42,6 +42,8 @@ camera_parameters_t camera_params={
   .roi_hard_X_lastimage = 0,
   .roi_hard_Y_lastimage = 0,
   .autoscroll_chart = 0,
+  .list_store_iter_ok = 0,
+  .background_set = 0,
 };
 
 // MAIN IS AT THE END
@@ -281,6 +283,7 @@ G_MODULE_EXPORT void cb_noimg_dialog_close(GtkButton *button)
 
 G_MODULE_EXPORT void cb_image_save_cancel_clicked(GtkButton *button)
 {
+  //destroymagickwand
   gtk_widget_hide( camera_params.objects->imagesavedialog );
 }
 
@@ -290,12 +293,14 @@ G_MODULE_EXPORT void cb_image_save_ok_clicked(GtkButton *button)
   filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (camera_params.objects->imagesavedialog));
   g_print("Filename %s\n",filename);
   g_free (filename);
-  //IsMagickWand
   //CloneMagickWand
   //MagickLinearStretchImage(camera_params->wand_data.magick_wand,0,1<<((int)camera_params.sensorbits));
   //MagickSetImageFormat
   //MagickWriteImage
   //http://library.gnome.org/devel/gdk-pixbuf/unstable/gdk-pixbuf3-file-saving.html#gdk-pixbuf-save
+  // MagickSetImageCompression
+  // MagickSetImageFormat
+  // MagickWriteImage
   gtk_widget_hide( camera_params.objects->imagesavedialog );
 }
 
@@ -326,6 +331,7 @@ G_MODULE_EXPORT void cb_directory_chooser_open_clicked(GtkButton *button)
 G_MODULE_EXPORT void cb_list_reset_clicked(GtkButton *button)
 {
   gtk_list_store_clear ( camera_params.objects->statistics_list );
+  camera_params.list_store_iter_ok=0;
 }
 
 
@@ -354,7 +360,7 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
   {
 
     //we get the data from the list
-    gdouble time,mean;
+    gdouble time,mean, mean_soft, mean_soft_roi1, mean_soft_roi2;
     gint image_number;
     int row=0;
     file = fopen (filename, "w");
@@ -366,15 +372,17 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
       return;
     }
 
-    fprintf(file,"#image_number\ttime\tmean\n");
+    fprintf(file,"#image_number\ttime\tmean\tmean_soft\tmean_soft_roi1\tmean_soft_roi2\n");
     do{
       gtk_tree_model_get (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter,
 			  0, &image_number,
 			  1, &time,
 			  2, &mean,
+			  3, &mean_soft,
+			  4, &mean_soft_roi1,
+			  4, &mean_soft_roi2,
 			  -1);
-      //g_print("Row %d image_number %d time %f mean %f\n",row, image_number, time, mean);
-      fprintf(file,"%d\t%f\t\t%f\n",image_number, time, mean);
+      fprintf(file,"%d\t%f\t%f\t%f\t%f\t%f\n",image_number, time, mean, mean_soft, mean_soft_roi1, mean_soft_roi2);
       row++;
     }while(TRUE==gtk_tree_model_iter_next (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter));
     fclose (file);
@@ -408,12 +416,38 @@ G_MODULE_EXPORT void cb_soft_editable_changed( GtkEditable *editable, gpointer  
     update_soft_val(&camera_params);
 }
 
+G_MODULE_EXPORT void cb_soft_ROI_editable_changed( GtkEditable *editable, gpointer   data )
+{
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params.objects->soft_cut_img))==TRUE)
+    update_soft_val(&camera_params);
+}
+
+G_MODULE_EXPORT void cb_soft_ROI_mean1_editable_changed( GtkEditable *editable, gpointer   data )
+{
+  if((gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params.objects->soft_display_mean_roi1))==TRUE)||
+     (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params.objects->soft_compute_mean_roi1))==TRUE))
+    update_soft_val(&camera_params);
+}
+
+G_MODULE_EXPORT void cb_soft_ROI_mean2_editable_changed( GtkEditable *editable, gpointer   data )
+{
+  if((gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params.objects->soft_display_mean_roi2))==TRUE)||
+     (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params.objects->soft_compute_mean_roi2))==TRUE))
+    update_soft_val(&camera_params);
+}
+
 G_MODULE_EXPORT void cb_soft_togglebutton_toggled(GtkToggleButton *togglebutton,gpointer   data )
 {
     update_soft_val(&camera_params);
 }
 
+/*** Background ****/
 
+G_MODULE_EXPORT void  cb_soft_set_bg_clicked(GtkButton *button)
+{
+  if(camera_params.image_number>0)
+    imagemagick_set_bg(&camera_params);
+}
 
 int
 main( int    argc,
@@ -425,9 +459,9 @@ main( int    argc,
 
     /* MagickWand Init */
     MagickWandGenesis();
-    camera_params.wand_data.magick_wand=NewMagickWand();
+    camera_params.wand_data.display_magick_wand=NewMagickWand();
+    camera_params.wand_data.processed_magick_wand=NewMagickWand();
     camera_params.wand_data.raw_magick_wand=NewMagickWand();
-    //camera_params.wand_data.exception=AcquireExceptionInfo();
 
     /* We are using a threaded program we must say it to gtk */
     if( ! g_thread_supported() )
@@ -489,6 +523,12 @@ main( int    argc,
     GW( soft_magn_x8 );
     GW( soft_cut_img );
     GW( soft_image_text );
+    GW( soft_display_mean_roi1 );
+    GW( soft_compute_mean_roi1 );
+    GW( soft_display_mean_roi2 );
+    GW( soft_compute_mean_roi2 );
+    GW( soft_background_info_text );
+    GW( soft_background_button );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -514,6 +554,14 @@ main( int    argc,
     GA( ROI_soft_adjust_height );
     GA( ROI_soft_adjust_x );
     GA( ROI_soft_adjust_y );
+    GA( ROI_soft_mean_adjust_x1 );
+    GA( ROI_soft_mean_adjust_width1 );
+    GA( ROI_soft_mean_adjust_y1 );
+    GA( ROI_soft_mean_adjust_height1 );
+    GA( ROI_soft_mean_adjust_x2 );
+    GA( ROI_soft_mean_adjust_width2 );
+    GA( ROI_soft_mean_adjust_y2 );
+    GA( ROI_soft_mean_adjust_height2 );
 #undef GA
 #define GL( name ) CH_GET_LIST_STORE( builder, name, data )
     GL( statistics_list );
@@ -548,9 +596,12 @@ main( int    argc,
     /* Free any allocated data */
     g_slice_free( gui_objects_t, camera_params.objects );
 
-    //DestroyExceptionInfo(camera_params.wand_data.exception);
+
+    if(camera_params.background_set)
+      DestroyMagickWand(camera_params.wand_data.background_wand);
     DestroyMagickWand(camera_params.wand_data.raw_magick_wand);
-    DestroyMagickWand(camera_params.wand_data.magick_wand);
+    DestroyMagickWand(camera_params.wand_data.processed_magick_wand);
+    DestroyMagickWand(camera_params.wand_data.display_magick_wand);
     MagickWandTerminus();
 
     return( 0 );

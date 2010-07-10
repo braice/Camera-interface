@@ -10,11 +10,18 @@
       <column type="gdouble"/>
       <!-- column-name Mean -->
       <column type="gdouble"/>
+      <!-- column-name Mean_soft -->
+      <column type="gdouble"/>
+      <!-- column-name Mean_soft_roi1 -->
+      <column type="gdouble"/>
+      <!-- column-name Mean_soft_roi2 -->
+      <column type="gdouble"/>
     </columns>
   </object>
   <object class="GtkWindow" id="main_window">
     <property name="events">GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
     <property name="title" translatable="yes">Camera Control</property>
+    <property name="window_position">center</property>
     <property name="default_width">700</property>
     <property name="default_height">500</property>
     <property name="icon_name">applications-science</property>
@@ -921,13 +928,13 @@ by clicking on the image
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkScrolledWindow" id="scrolledwindow3">
+                          <object class="GtkScrolledWindow" id="scrolledwindow_raw">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="hadjustment">adj1_scrolled_win_raw</property>
                             <property name="vadjustment">adj2_scrolled_win_raw</property>
                             <child>
-                              <object class="GtkViewport" id="viewport2">
+                              <object class="GtkViewport" id="viewport_raw">
                                 <property name="visible">True</property>
                                 <property name="resize_mode">queue</property>
                                 <property name="hadjustment">adj1_scrolled_win_raw</property>
@@ -1044,6 +1051,8 @@ by clicking on the image
                             <property name="enable_grid_lines">both</property>
                             <child>
                               <object class="GtkTreeViewColumn" id="image_num_column">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
                                 <property name="title">Image Number</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="cellrenderertext1"/>
@@ -1055,6 +1064,8 @@ by clicking on the image
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="timestamp_column">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
                                 <property name="title">Timestamp</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="cellrenderertext2"/>
@@ -1066,11 +1077,51 @@ by clicking on the image
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="mean_column">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
                                 <property name="title">Mean</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="cellrenderertext3"/>
                                   <attributes>
                                     <attribute name="text">2</attribute>
+                                  </attributes>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="mean_soft_column">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <property name="title">Mean Soft Img</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext4"/>
+                                  <attributes>
+                                    <attribute name="text">3</attribute>
+                                  </attributes>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="mean_roi1_soft_column">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <property name="title">Mean ROI1</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext5"/>
+                                  <attributes>
+                                    <attribute name="text">4</attribute>
+                                  </attributes>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="mean_roi1_soft_column2">
+                                <property name="resizable">True</property>
+                                <property name="title">Mean ROI2</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext6"/>
+                                  <attributes>
+                                    <attribute name="text">5</attribute>
                                   </attributes>
                                 </child>
                               </object>
@@ -1139,29 +1190,24 @@ by clicking on the image
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkScrolledWindow" id="scrolledwindow2">
+                      <object class="GtkScrolledWindow" id="scrolledwindow_processed">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="hadjustment">adj1_scrolled_win_processed</property>
-                        <property name="vadjustment">adj2_scrolled_win_processed</property>
+                        <property name="hadjustment">adj1_scrol_win_soft</property>
+                        <property name="vadjustment">adj2_scrol_win_soft</property>
                         <child>
-                          <object class="GtkViewport" id="viewport1">
+                          <object class="GtkViewport" id="viewport_processed">
                             <property name="visible">True</property>
                             <property name="resize_mode">queue</property>
-                            <property name="hadjustment">adj1_scrolled_win_processed</property>
-                            <property name="vadjustment">adj2_scrolled_win_processed</property>
+                            <property name="hadjustment">adj1_scrol_win_soft</property>
+                            <property name="vadjustment">adj2_scrol_win_soft</property>
                             <property name="shadow_type">none</property>
                             <child>
-                              <object class="GtkEventBox" id="eventbox1">
+                              <object class="GtkImage" id="processed_image">
                                 <property name="visible">True</property>
-                                <child>
-                                  <object class="GtkImage" id="processed_image">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="yalign">0</property>
-                                    <property name="stock">gtk-missing-image</property>
-                                  </object>
-                                </child>
+                                <property name="xalign">0</property>
+                                <property name="yalign">0</property>
+                                <property name="stock">gtk-missing-image</property>
                               </object>
                             </child>
                           </object>
@@ -1228,6 +1274,82 @@ image processing</property>
                     <property name="fill">False</property>
                     <property name="padding">5</property>
                     <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkExpander" id="expander4">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <child>
+                      <object class="GtkVBox" id="vbox20">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkCheckButton" id="soft_background_button">
+                            <property name="label" translatable="yes">Background
+substraction</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                            <signal name="toggled" handler="cb_soft_togglebutton_toggled"/>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkVButtonBox" id="vbuttonbox1">
+                            <property name="visible">True</property>
+                            <property name="spacing">5</property>
+                            <property name="layout_style">center</property>
+                            <child>
+                              <object class="GtkButton" id="soft_setbg_button">
+                                <property name="label" translatable="yes">Current image
+as background</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <signal name="clicked" handler="cb_soft_set_bg_clicked"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="padding">5</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkTextView" id="soft_background_info_text">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel" id="label32">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Background substract</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
                 <child>
@@ -1302,7 +1424,7 @@ image processing</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="position">2</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
                 <child>
@@ -1426,7 +1548,7 @@ image processing</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="position">3</property>
+                    <property name="position">4</property>
                   </packing>
                 </child>
                 <child>
@@ -1473,7 +1595,7 @@ image processing</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="position">4</property>
+                    <property name="position">5</property>
                   </packing>
                 </child>
                 <child>
@@ -1555,7 +1677,7 @@ image processing</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="position">5</property>
+                    <property name="position">6</property>
                   </packing>
                 </child>
                 <child>
@@ -1607,7 +1729,7 @@ image processing</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="position">6</property>
+                    <property name="position">7</property>
                   </packing>
                 </child>
                 <child>
@@ -1702,7 +1824,7 @@ image processing</property>
                                 <property name="adjustment">ROI_soft_adjust_x</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
-                                <signal name="changed" handler="cb_soft_editable_changed"/>
+                                <signal name="changed" handler="cb_soft_ROI_editable_changed"/>
                               </object>
                               <packing>
                                 <property name="top_attach">1</property>
@@ -1722,7 +1844,7 @@ image processing</property>
                                 <property name="climb_rate">0.20000000000000001</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
-                                <signal name="changed" handler="cb_soft_editable_changed"/>
+                                <signal name="changed" handler="cb_soft_ROI_editable_changed"/>
                               </object>
                               <packing>
                                 <property name="top_attach">3</property>
@@ -1742,7 +1864,7 @@ image processing</property>
                                 <property name="climb_rate">0.20000000000000001</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
-                                <signal name="changed" handler="cb_soft_editable_changed"/>
+                                <signal name="changed" handler="cb_soft_ROI_editable_changed"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1764,7 +1886,7 @@ image processing</property>
                                 <property name="climb_rate">0.20000000000000001</property>
                                 <property name="snap_to_ticks">True</property>
                                 <property name="numeric">True</property>
-                                <signal name="changed" handler="cb_soft_editable_changed"/>
+                                <signal name="changed" handler="cb_soft_ROI_editable_changed"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1794,25 +1916,160 @@ image processing</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="position">7</property>
+                    <property name="position">8</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkExpander" id="expander4">
+                  <object class="GtkExpander" id="expander8">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <child>
-                      <object class="GtkVBox" id="vbox20">
+                      <object class="GtkVBox" id="vbox23">
                         <property name="visible">True</property>
                         <child>
-                          <object class="GtkCheckButton" id="soft_background_button">
-                            <property name="label" translatable="yes">Background
-substraction</property>
+                          <object class="GtkTable" id="table4">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="draw_indicator">True</property>
-                            <signal name="toggled" handler="cb_soft_togglebutton_toggled"/>
+                            <property name="n_rows">4</property>
+                            <property name="n_columns">2</property>
+                            <child>
+                              <object class="GtkLabel" id="label37">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="xpad">5</property>
+                                <property name="label" translatable="yes">Start X</property>
+                              </object>
+                              <packing>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label38">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="xpad">5</property>
+                                <property name="label" translatable="yes">Width</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label39">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="xpad">5</property>
+                                <property name="label" translatable="yes">Start Y</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label40">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="xpad">5</property>
+                                <property name="label" translatable="yes">Height</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="soft_ROI_mean_start_x1">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="caps_lock_warning">False</property>
+                                <property name="adjustment">ROI_soft_mean_adjust_x1</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_soft_ROI_mean1_editable_changed"/>
+                              </object>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="x_options"></property>
+                                <property name="y_options">GTK_EXPAND</property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="soft_ROI_mean_start_y1">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="caps_lock_warning">False</property>
+                                <property name="adjustment">ROI_soft_mean_adjust_y1</property>
+                                <property name="climb_rate">0.20000000000000001</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_soft_ROI_mean1_editable_changed"/>
+                              </object>
+                              <packing>
+                                <property name="top_attach">3</property>
+                                <property name="bottom_attach">4</property>
+                                <property name="x_options"></property>
+                                <property name="y_options">GTK_EXPAND</property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="soft_ROI_mean_width1">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="caps_lock_warning">False</property>
+                                <property name="adjustment">ROI_soft_mean_adjust_width1</property>
+                                <property name="climb_rate">0.20000000000000001</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_soft_ROI_mean1_editable_changed"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="x_options"></property>
+                                <property name="y_options"></property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="soft_ROI_mean_height1">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="caps_lock_warning">False</property>
+                                <property name="adjustment">ROI_soft_mean_adjust_height1</property>
+                                <property name="climb_rate">0.20000000000000001</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_soft_ROI_mean1_editable_changed"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">3</property>
+                                <property name="bottom_attach">4</property>
+                                <property name="x_options"></property>
+                                <property name="y_options"></property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -1821,55 +2078,245 @@ substraction</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkVButtonBox" id="vbuttonbox1">
+                          <object class="GtkCheckButton" id="soft_display_mean_roi1">
+                            <property name="label" translatable="yes">Display ROI</property>
                             <property name="visible">True</property>
-                            <property name="spacing">5</property>
-                            <property name="layout_style">center</property>
-                            <child>
-                              <object class="GtkButton" id="soft_setbg_button">
-                                <property name="label" translatable="yes">Current image
-as background</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                            <signal name="toggled" handler="cb_soft_togglebutton_toggled"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="padding">5</property>
                             <property name="position">1</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkTextView" id="soft_background_info_text">
+                          <object class="GtkCheckButton" id="soft_compute_mean_roi1">
+                            <property name="label" translatable="yes">Compute mean</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                            <signal name="toggled" handler="cb_soft_togglebutton_toggled"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="fill">False</property>
                             <property name="position">2</property>
                           </packing>
                         </child>
                       </object>
                     </child>
                     <child type="label">
-                      <object class="GtkLabel" id="label32">
+                      <object class="GtkLabel" id="label36">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Background substract</property>
+                        <property name="label" translatable="yes">Mean ROI 1</property>
                       </object>
                     </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="position">8</property>
+                    <property name="position">9</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkExpander" id="expander9">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <child>
+                      <object class="GtkVBox" id="vbox24">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkTable" id="table5">
+                            <property name="visible">True</property>
+                            <property name="n_rows">4</property>
+                            <property name="n_columns">2</property>
+                            <child>
+                              <object class="GtkLabel" id="label41">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="xpad">5</property>
+                                <property name="label" translatable="yes">Start X</property>
+                              </object>
+                              <packing>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label42">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="xpad">5</property>
+                                <property name="label" translatable="yes">Width</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label43">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="xpad">5</property>
+                                <property name="label" translatable="yes">Start Y</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label44">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="xpad">5</property>
+                                <property name="label" translatable="yes">Height</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="x_options">GTK_FILL</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="soft_ROI_mean_start_x2">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="caps_lock_warning">False</property>
+                                <property name="adjustment">ROI_soft_mean_adjust_x2</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_soft_ROI_mean2_editable_changed"/>
+                              </object>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="x_options"></property>
+                                <property name="y_options">GTK_EXPAND</property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="soft_ROI_mean_start_y2">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="caps_lock_warning">False</property>
+                                <property name="adjustment">ROI_soft_mean_adjust_y2</property>
+                                <property name="climb_rate">0.20000000000000001</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_soft_ROI_mean2_editable_changed"/>
+                              </object>
+                              <packing>
+                                <property name="top_attach">3</property>
+                                <property name="bottom_attach">4</property>
+                                <property name="x_options"></property>
+                                <property name="y_options">GTK_EXPAND</property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="soft_ROI_mean_width2">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="caps_lock_warning">False</property>
+                                <property name="adjustment">ROI_soft_mean_adjust_width2</property>
+                                <property name="climb_rate">0.20000000000000001</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_soft_ROI_mean2_editable_changed"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="x_options"></property>
+                                <property name="y_options"></property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkSpinButton" id="soft_ROI_mean_height2">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="caps_lock_warning">False</property>
+                                <property name="adjustment">ROI_soft_mean_adjust_height2</property>
+                                <property name="climb_rate">0.20000000000000001</property>
+                                <property name="snap_to_ticks">True</property>
+                                <property name="numeric">True</property>
+                                <signal name="changed" handler="cb_soft_ROI_mean2_editable_changed"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">3</property>
+                                <property name="bottom_attach">4</property>
+                                <property name="x_options"></property>
+                                <property name="y_options"></property>
+                                <property name="x_padding">5</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="soft_display_mean_roi2">
+                            <property name="label" translatable="yes">Display ROI</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                            <signal name="toggled" handler="cb_soft_togglebutton_toggled"/>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="soft_compute_mean_roi2">
+                            <property name="label" translatable="yes">Compute mean</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="draw_indicator">True</property>
+                            <signal name="toggled" handler="cb_soft_togglebutton_toggled"/>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel" id="label45">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Mean ROI 2</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">10</property>
                   </packing>
                 </child>
               </object>
@@ -1944,26 +2391,26 @@ as background</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ROI_soft_adjust_x">
-    <property name="upper">2000</property>
+    <property name="upper">10000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ROI_soft_adjust_width">
     <property name="value">1</property>
     <property name="lower">1</property>
-    <property name="upper">2000</property>
+    <property name="upper">10000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ROI_soft_adjust_y">
-    <property name="upper">2000</property>
+    <property name="upper">10000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ROI_soft_adjust_height">
     <property name="value">1</property>
     <property name="lower">1</property>
-    <property name="upper">2000</property>
+    <property name="upper">10000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -2063,9 +2510,9 @@ as background</property>
     <property name="type_hint">normal</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="transient_for">main_window</property>
-    <property name="action">save</property>
     <property name="show_hidden">True</property>
     <property name="do_overwrite_confirmation">True</property>
+    <property name="action">save</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox3">
         <property name="visible">True</property>
@@ -2304,9 +2751,9 @@ region of interest</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="transient_for">main_window</property>
     <property name="has_separator">False</property>
-    <property name="action">save</property>
     <property name="show_hidden">True</property>
     <property name="do_overwrite_confirmation">True</property>
+    <property name="action">save</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox9">
         <property name="visible">True</property>
@@ -2388,23 +2835,59 @@ region of interest</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adj1_scrolled_win_processed">
+  <object class="GtkAdjustment" id="adj1_scrol_win_soft">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adj2_scrolled_win_processed">
+  <object class="GtkAdjustment" id="adj2_scrol_win_soft">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adj1_scrolled_win_raw">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adj2_scrolled_win_raw">
     <property name="upper">100</property>
+  </object>
+  <object class="GtkAdjustment" id="ROI_soft_mean_adjust_x1">
+    <property name="upper">2000.001</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="ROI_soft_mean_adjust_width1">
+    <property name="lower">1</property>
+    <property name="upper">10000</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="ROI_soft_mean_adjust_y1">
+    <property name="upper">10000</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="ROI_soft_mean_adjust_height1">
+    <property name="lower">1</property>
+    <property name="upper">10000</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="ROI_soft_mean_adjust_x2">
+    <property name="upper">2000.001</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="ROI_soft_mean_adjust_width2">
+    <property name="lower">1</property>
+    <property name="upper">10000</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="ROI_soft_mean_adjust_y2">
+    <property name="upper">10000</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="ROI_soft_mean_adjust_height2">
+    <property name="lower">1</property>
+    <property name="upper">10000</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>

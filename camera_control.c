@@ -98,7 +98,7 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
 {
   int ret;
   gchar *msg; 
-
+  g_print("Camera inint\n");
   ret=PvCameraOpen(UniqueId,ePvAccessMaster,&camera_params->camera_handler);
   if(ret!=ePvErrSuccess)
   {
@@ -109,7 +109,6 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   }
   /****************** Camera information getting ************/
   unsigned long gainmin, gainmax,min,max;
-  //ret=PvAttrStringGet(camera_params->camera_handler,"DeviceModelName",ModelName,100,NULL);
   PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&camera_params->sensorbits);
   gtk_adjustment_set_upper(camera_params->objects->min_meanbar,1<<((int)camera_params->sensorbits));
   gtk_adjustment_set_upper(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
@@ -122,10 +121,14 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
   //We write the info in the text buffer
   gdk_threads_enter();
+  g_print("gdk_threads_enter\n");
+
   msg = g_strdup_printf ("Camera : %s\nSensor %ldx%ld %ld bits\nGain %lddB to %lddB", DisplayName,camera_params->sensorwidth,camera_params->sensorheight,camera_params->sensorbits,gainmin,gainmax);
   gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
   g_free (msg);
   gdk_threads_leave();
+  g_print("gdk_threads_leave\n");
+
   //we set the min/max for the adjustments
   gtk_adjustment_set_lower(camera_params->objects->Exp_adj_gain,gainmin);
   gtk_adjustment_set_upper(camera_params->objects->Exp_adj_gain,gainmax);
@@ -169,10 +172,14 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
     PvAttrUint32Set(camera_params->camera_handler,"PacketSize",Size);
     PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);
     gdk_threads_enter();
+    g_print("gdk_threads_enter\n");
+
     msg = g_strdup_printf ("\nPacket size: %lu",Size);
     gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
     g_free (msg);
     gdk_threads_leave();
+    g_print("gdk_threads_leave\n");
+
   }
   else 
     g_print("Error while setting the packet size: %s\n",PvAPIerror_to_str(ret));
@@ -193,17 +200,7 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   camera_params->camera_connected=1;
   /********************* End of Camera INIT *******************/
 
-#if 0
-  char truc[30];
-  int i;
-  for( i=0;i<30;i++)
-    truc[i]='\0';
-  PvAttrEnumGet(camera_params->camera_handler, "AcqStartTriggerMode",truc, 30, NULL);
-  g_print("AcqStartTriggerMode %s\n",truc);
-  PvAttrEnumGet(camera_params->camera_handler, "AcqEndTriggerMode", truc, 30, NULL);
-  g_print("AcqEndTriggerMode %s\n",truc);
-#endif
-
+  g_print("End of Camera inint\n");
 
   return 0;
 }
@@ -383,6 +380,8 @@ void camera_new_image(camera_parameters_t* camera_params)
   height=camera_params->camera_frame.Height;
 
   gdk_threads_enter();
+  g_print("gdk_threads_enter\n");
+    
   camera_params->image_number++;
 
 
@@ -459,13 +458,13 @@ void camera_new_image(camera_parameters_t* camera_params)
   time_usec/=1000000;
   time = tv.tv_sec-start_time+time_usec;
   
-  GtkTreeIter iter;
-  gtk_list_store_append (camera_params->objects->statistics_list, &iter);
-  gtk_list_store_set (camera_params->objects->statistics_list, &iter,
+  gtk_list_store_append (camera_params->objects->statistics_list, &camera_params->list_iter);
+  gtk_list_store_set (camera_params->objects->statistics_list, &camera_params->list_iter,
 		      0, (gint)camera_params->image_number,
 		      1, time,
 		      2, (gdouble)mean,
 		      -1);
+  camera_params->list_store_iter_ok=1;
 
   //if we asked for autoscrolling the chart, we do it
   if(camera_params->autoscroll_chart)
@@ -485,13 +484,16 @@ void camera_new_image(camera_parameters_t* camera_params)
   fraction=fraction<0?0:fraction;
   fraction=fraction>1?1:fraction;
   gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->mean_bar),fraction);
+  gdk_threads_leave();
+  g_print("gdk_threads_leave\n");
+
 
   /********************* ImageMagick *************************/
-
   imagemagick_get_image(camera_params);
-  gdk_threads_leave();
-  imagemagick_process_image(camera_params);
+  imagemagick_process_image(camera_params,1);
   gdk_threads_enter();
+  g_print("gdk_threads_enter\n");
+
   imagemagick_display_image(camera_params);
 
 
@@ -501,6 +503,8 @@ void camera_new_image(camera_parameters_t* camera_params)
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->raw_image);
   gdk_threads_leave();
+  g_print("gdk_threads_leave\n");
+
   //ready for the next one
   PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,FrameDoneCB);
 
