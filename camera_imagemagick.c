@@ -193,7 +193,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
     //default filter for magnifyimage : CubicFilter
     MagickResizeImage(camera_params->wand_data.processed_magick_wand,
 		      n*MagickGetImageWidth(camera_params->wand_data.processed_magick_wand),
-		      n*MagickGetImageWidth(camera_params->wand_data.processed_magick_wand),
+		      n*MagickGetImageHeight(camera_params->wand_data.processed_magick_wand),
 		      PointFilter,0);
   }
   /**************** Image rotation ****************/
