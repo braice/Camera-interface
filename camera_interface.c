@@ -447,6 +447,8 @@ G_MODULE_EXPORT void  cb_soft_set_bg_clicked(GtkButton *button)
 {
   if(camera_params.image_number>0)
     imagemagick_set_bg(&camera_params);
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params.objects->soft_background_button))==TRUE)
+    update_soft_val(&camera_params);    
 }
 
 int
