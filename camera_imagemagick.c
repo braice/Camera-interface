@@ -118,11 +118,16 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 	 (MagickGetImageHeight(camera_params->wand_data.background_wand)!=MagickGetImageHeight(camera_params->wand_data.processed_magick_wand)))
       {
 	gchar *msg;
+	if(threads_enter)
+	  gdk_threads_enter();
 	msg = g_strdup_printf ("!!! Incompatible sizes\nBg size: %ldx%ld",
 			       MagickGetImageWidth(camera_params->wand_data.background_wand),
 			       MagickGetImageHeight(camera_params->wand_data.background_wand));
 	gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_background_info_text)),msg,-1);
 	g_free (msg);
+	if(threads_enter)
+	  gdk_threads_leave();
+
       }
       else
       {
@@ -139,9 +144,13 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
       }
     }else{
       gchar *msg;
+      if(threads_enter)
+	gdk_threads_enter();
       msg = g_strdup_printf ("!!! Background NOT set");
       gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_background_info_text)),msg,-1);
       g_free (msg);
+      if(threads_enter)
+	gdk_threads_leave();
     }
   }
 
@@ -286,11 +295,15 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   /******************** Fill the treeview     **********************/
   if(camera_params->list_store_iter_ok)
   {
+    if(threads_enter)
+      gdk_threads_enter();
     gtk_list_store_set(camera_params->objects->statistics_list, &camera_params->list_iter,
 		       3,(gdouble) mean,
 		       4,(gdouble) mean_roi1,
 		       5,(gdouble) mean_roi2,
 		       -1);
+    if(threads_enter)
+      gdk_threads_leave();
   }
   /******************** Display image data   **********************/
 
