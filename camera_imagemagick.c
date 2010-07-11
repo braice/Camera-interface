@@ -40,18 +40,6 @@
   //}
 
 
-#define ThrowWandException(wand) \
-  { \
-  char \
-    *description; \
- \
-  ExceptionType \
-    severity; \
- \
-  description=MagickGetException(wand,&severity); \
-  (void) g_print("Magickwand exception %s %s %lu %s\n",GetMagickModule(),description); \
-  description=(char *) MagickRelinquishMemory(description); \
-}
 
 void update_soft_val(camera_parameters_t* camera_params)
 {
@@ -64,12 +52,23 @@ void update_soft_val(camera_parameters_t* camera_params)
 void imagemagick_get_image(camera_parameters_t* camera_params)
 {
   MagickBooleanType status;
-  g_print("get\n");
+
+
+  //We save the old one
+  camera_params->wand_data.raw_magick_wand_old=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
+
+  camera_params->wand_data.raw_img_ok=0;
 
   ClearMagickWand(camera_params->wand_data.raw_magick_wand);
   status=MagickConstituteImage(camera_params->wand_data.raw_magick_wand,camera_params->camera_frame.Width,camera_params->camera_frame.Height,"I",ShortPixel,camera_params->camera_frame.ImageBuffer);
-  if (status == MagickFalse)
+  if(status == MagickFalse)
+  {
     ThrowWandException(camera_params->wand_data.raw_magick_wand);
+  }
+  else
+  {
+    camera_params->wand_data.raw_img_ok=1;
+  }
 
 }
 
@@ -103,7 +102,9 @@ MagickBooleanType imagemagick_draw_roi(MagickWand *wand,char* color, int x, int 
 void imagemagick_process_image(camera_parameters_t* camera_params, int threads_enter)
 {
   MagickBooleanType status;
-
+  //We save the old one
+  camera_params->wand_data.processed_magick_wand_old=CloneMagickWand(camera_params->wand_data.processed_magick_wand);
+  camera_params->wand_data.processed_img_ok=0;
   camera_params->wand_data.processed_magick_wand=DestroyMagickWand(camera_params->wand_data.processed_magick_wand);
   camera_params->wand_data.processed_magick_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
   MagickSetImageDepth(camera_params->wand_data.processed_magick_wand,16);
@@ -223,6 +224,8 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   // MagickMinifyImage
   // MagickScaleImage
 
+  //processing done
+  camera_params->wand_data.processed_img_ok=1;
 
   //We copy the real image for display (for keeping the other one for saving)
   camera_params->wand_data.display_magick_wand=DestroyMagickWand(camera_params->wand_data.display_magick_wand);

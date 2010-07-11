@@ -854,7 +854,7 @@
                               <object class="GtkHButtonBox" id="hbuttonbox2">
                                 <property name="visible">True</property>
                                 <child>
-                                  <object class="GtkButton" id="Raw_image_save">
+                                  <object class="GtkButton" id="raw_save_button">
                                     <property name="label" translatable="yes">Save_image</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -1185,11 +1185,12 @@
                       <object class="GtkHButtonBox" id="hbuttonbox8">
                         <property name="visible">True</property>
                         <child>
-                          <object class="GtkButton" id="button3">
+                          <object class="GtkButton" id="processed_save_button">
                             <property name="label" translatable="yes">Save Image</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <signal name="clicked" handler="cb_save_clicked"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>

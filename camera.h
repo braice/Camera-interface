@@ -118,12 +118,14 @@ typedef struct gui_objects_t{
 
 typedef struct magickwand_data_t{
   MagickWand *processed_magick_wand;  //The magickwand data
+  MagickWand *processed_magick_wand_old;  //The magickwand data
+  int processed_img_ok;
   MagickWand *display_magick_wand;  //The magickwand data
   MagickWand *raw_magick_wand;  //The magickwand data
+  MagickWand *raw_magick_wand_old;  //The magickwand data
+  int raw_img_ok;
   MagickWand *background_wand;
-  //Image *image;             //The imagemagick RAW image
-  //Image *background;
-  //ExceptionInfo *exception;
+  MagickWand *saving_wand;
 }magickwand_data_t;
 
 #define ROI_CLICK_NONE 0
@@ -174,6 +176,19 @@ typedef struct camera_parameters_t{
   //The GUI objects
   gui_objects_t *objects;
 }camera_parameters_t;
+
+#define ThrowWandException(wand) \
+  { \
+  char \
+    *description; \
+ \
+  ExceptionType \
+    severity; \
+ \
+  description=MagickGetException(wand,&severity); \
+  (void) g_print("Magickwand exception %s %s %lu %s\n",GetMagickModule(),description); \
+  description=(char *) MagickRelinquishMemory(description); \
+}
 
 
 void *camera_thread_func(void* arg);

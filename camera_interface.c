@@ -268,12 +268,42 @@ G_MODULE_EXPORT void cb_autoscroll_toggled(GtkToggleButton *togglebutton,gpointe
 //Saving the actual image
 G_MODULE_EXPORT void cb_save_clicked(GtkButton *button)
 {
+
   //Check if there is an image
   if(camera_params.image_number==0)
     gtk_widget_show( camera_params.objects->no_image_dialog );
   else
-    gtk_widget_show( camera_params.objects->imagesavedialog );
+  {
+    camera_params.wand_data.saving_wand=NULL;
+    if(strcmp("processed_save_button",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
+    {
+      if(camera_params.wand_data.processed_img_ok==1)
+	camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand);
+      else
+	{
+	  camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand_old);
+	  g_print("Image not ready, taking the old one\n");
+	}
+    }
+    else if(strcmp("raw_save_button",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
+    {
+      if(camera_params.wand_data.raw_img_ok==1)
+	camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand);
+      else
+	{
+	  g_print("Image not ready, taking the old one\n");
+	  camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand_old);
 
+	}
+	
+    }
+    if(camera_params.wand_data.saving_wand)
+    {
+      gtk_widget_show( camera_params.objects->imagesavedialog );
+      g_print("save button %s clicked\n",gtk_buildable_get_name(GTK_BUILDABLE(button)));      
+    }
+
+  }
 }
 
 G_MODULE_EXPORT void cb_noimg_dialog_close(GtkButton *button)
@@ -283,7 +313,9 @@ G_MODULE_EXPORT void cb_noimg_dialog_close(GtkButton *button)
 
 G_MODULE_EXPORT void cb_image_save_cancel_clicked(GtkButton *button)
 {
-  //destroymagickwand
+  if(camera_params.wand_data.saving_wand)
+    DestroyMagickWand(camera_params.wand_data.saving_wand);
+  camera_params.wand_data.saving_wand=NULL;
   gtk_widget_hide( camera_params.objects->imagesavedialog );
 }
 
@@ -291,16 +323,23 @@ G_MODULE_EXPORT void cb_image_save_ok_clicked(GtkButton *button)
 {
   char *filename;
   filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (camera_params.objects->imagesavedialog));
-  g_print("Filename %s\n",filename);
+  g_print("Saving to Filename %s\n",filename);
+  
+  if(camera_params.wand_data.saving_wand)
+  {
+    MagickBooleanType status;
+    status=MagickSetImageFormat(camera_params.wand_data.saving_wand,"PNG");
+    if (status == MagickFalse)
+      ThrowWandException(camera_params.wand_data.saving_wand);
+    status=MagickWriteImage(camera_params.wand_data.saving_wand,filename);
+    if (status == MagickFalse)
+      ThrowWandException(camera_params.wand_data.saving_wand);
+    DestroyMagickWand(camera_params.wand_data.saving_wand);
+  }
   g_free (filename);
-  //CloneMagickWand
-  //MagickLinearStretchImage(camera_params->wand_data.magick_wand,0,1<<((int)camera_params.sensorbits));
-  //MagickSetImageFormat
-  //MagickWriteImage
-  //http://library.gnome.org/devel/gdk-pixbuf/unstable/gdk-pixbuf3-file-saving.html#gdk-pixbuf-save
-  // MagickSetImageCompression
-  // MagickSetImageFormat
-  // MagickWriteImage
+
+
+  camera_params.wand_data.saving_wand=NULL;
   gtk_widget_hide( camera_params.objects->imagesavedialog );
 }
 
@@ -601,6 +640,8 @@ main( int    argc,
 
     if(camera_params.background_set)
       DestroyMagickWand(camera_params.wand_data.background_wand);
+    if(camera_params.wand_data.saving_wand)
+      DestroyMagickWand(camera_params.wand_data.saving_wand);
     DestroyMagickWand(camera_params.wand_data.raw_magick_wand);
     DestroyMagickWand(camera_params.wand_data.processed_magick_wand);
     DestroyMagickWand(camera_params.wand_data.display_magick_wand);
