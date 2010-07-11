@@ -109,6 +109,14 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   }
   /****************** Camera information getting ************/
   unsigned long gainmin, gainmax,min,max;
+  gdk_threads_enter();
+  g_print("gdk_threads_enter\n");
+  //We set theses ROI to a minimal value
+  gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_width1,1);
+  gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_width2,1);
+  gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_height1,1);
+  gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_height2,1);
+  //We fix the things which depends on the sensor depth
   PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&camera_params->sensorbits);
   gtk_adjustment_set_upper(camera_params->objects->min_meanbar,1<<((int)camera_params->sensorbits));
   gtk_adjustment_set_upper(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
@@ -120,14 +128,10 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&camera_params->sensorheight);
   PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
   //We write the info in the text buffer
-  gdk_threads_enter();
-  g_print("gdk_threads_enter\n");
 
   msg = g_strdup_printf ("Camera : %s\nSensor %ldx%ld %ld bits\nGain %lddB to %lddB", DisplayName,camera_params->sensorwidth,camera_params->sensorheight,camera_params->sensorbits,gainmin,gainmax);
   gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
   g_free (msg);
-  gdk_threads_leave();
-  g_print("gdk_threads_leave\n");
 
   //we set the min/max for the adjustments
   gtk_adjustment_set_lower(camera_params->objects->Exp_adj_gain,gainmin);
@@ -162,6 +166,8 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   gtk_adjustment_set_lower(camera_params->objects->Trig_framerate_adj,fmin);
   gtk_adjustment_set_upper(camera_params->objects->Trig_framerate_adj,fmax);
   gtk_adjustment_set_value(camera_params->objects->Trig_framerate_adj,fmin);
+  gdk_threads_leave();
+  g_print("gdk_threads_leave\n");
   
   /********************* Camera INIT *******************/
   //Now we adjust the packet size
