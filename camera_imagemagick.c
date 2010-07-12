@@ -43,10 +43,11 @@
 
 void update_soft_val(camera_parameters_t* camera_params)
 {
-  if(camera_params->image_number==0)
+  //If there is no image to be processed we return
+  if((camera_params->wand_data.raw_img_ok==0)&&(camera_params->wand_data.raw_img_old_ok==0))
     return;
-  imagemagick_process_image(camera_params,0);
-  imagemagick_display_image(camera_params);
+  //imagemagick_process_image(camera_params,0);
+  //imagemagick_display_image(camera_params);
 }
 
 void imagemagick_get_image(camera_parameters_t* camera_params)
@@ -54,8 +55,14 @@ void imagemagick_get_image(camera_parameters_t* camera_params)
   MagickBooleanType status;
 
 
-  //We save the old one
-  camera_params->wand_data.raw_magick_wand_old=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
+  //We save the old one if we already have an image
+  if(camera_params->wand_data.raw_img_ok==1)
+  {
+    //NOTE : USE MUTEX
+    camera_params->wand_data.raw_img_old_ok=0;
+    camera_params->wand_data.raw_magick_wand_old=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
+    camera_params->wand_data.raw_img_old_ok=1;
+  }
 
   camera_params->wand_data.raw_img_ok=0;
 
@@ -103,10 +110,21 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 {
   MagickBooleanType status;
   //We save the old one
+  if((camera_params->wand_data.raw_img_ok==0)&&(camera_params->wand_data.raw_img_old_ok==0))
+  {
+    add_to_statusbar(camera_params, 1, "Image processing : No frame to process");
+    return;
+  }
+  camera_params->wand_data.processed_img_old_ok=0;
   camera_params->wand_data.processed_magick_wand_old=CloneMagickWand(camera_params->wand_data.processed_magick_wand);
+  camera_params->wand_data.processed_img_old_ok=1;
   camera_params->wand_data.processed_img_ok=0;
   camera_params->wand_data.processed_magick_wand=DestroyMagickWand(camera_params->wand_data.processed_magick_wand);
-  camera_params->wand_data.processed_magick_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
+  //If the new image is not ok, we process the old one
+  if(camera_params->wand_data.raw_img_ok==1)
+    camera_params->wand_data.processed_magick_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
+  else
+    camera_params->wand_data.processed_magick_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand_old);
   MagickSetImageDepth(camera_params->wand_data.processed_magick_wand,16);
 
   /************** Background substraction *****************/
@@ -160,8 +178,6 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autolevel))==FALSE)
   {
     MagickLevelImage(camera_params->wand_data.processed_magick_wand, gtk_adjustment_get_value(camera_params->objects->soft_level_min_adj), 1, gtk_adjustment_get_value(camera_params->objects->soft_level_max_adj));
-  //MagickLinearStretchImage(camera_params->wand_data.processed_magick_wand,0,1<<((int)camera_params->sensorbits));
-  //MagickLinearStretchImage(camera_params->wand_data.processed_magick_wand,0,4096);
 
     MagickBrightnessContrastImage(camera_params->wand_data.processed_magick_wand,gtk_adjustment_get_value(camera_params->objects->soft_brightness_adj),gtk_adjustment_get_value(camera_params->objects->soft_contrast_adj));
   }

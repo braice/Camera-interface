@@ -83,6 +83,8 @@ typedef struct gui_objects_t{
   GtkWidget *soft_compute_mean_roi2;
   GtkWidget *soft_background_info_text;
   GtkWidget *soft_background_button;
+  GtkWidget *raw_autosave;
+  GtkWidget *processed_autosave;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -116,16 +118,23 @@ typedef struct gui_objects_t{
   GtkListStore *statistics_list;
 }gui_objects_t;
 
+#define DIR_CHOOSING_RAW 1
+#define DIR_CHOOSING_PROCESSED 2
 typedef struct magickwand_data_t{
   MagickWand *processed_magick_wand;  //The magickwand data
   MagickWand *processed_magick_wand_old;  //The magickwand data
   int processed_img_ok;
+  int processed_img_old_ok;
   MagickWand *display_magick_wand;  //The magickwand data
   MagickWand *raw_magick_wand;  //The magickwand data
   MagickWand *raw_magick_wand_old;  //The magickwand data
   int raw_img_ok;
+  int raw_img_old_ok;
   MagickWand *background_wand;
   MagickWand *saving_wand;
+  char *raw_directory;
+  char *processed_directory;
+  int dirchoosing;
 }magickwand_data_t;
 
 #define ROI_CLICK_NONE 0

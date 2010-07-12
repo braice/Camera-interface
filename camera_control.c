@@ -110,7 +110,6 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   /****************** Camera information getting ************/
   unsigned long gainmin, gainmax,min,max;
   gdk_threads_enter();
-  g_print("gdk_threads_enter\n");
   //We set theses ROI to a minimal value
   gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_width1,1);
   gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_width2,1);
@@ -167,7 +166,6 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   gtk_adjustment_set_upper(camera_params->objects->Trig_framerate_adj,fmax);
   gtk_adjustment_set_value(camera_params->objects->Trig_framerate_adj,fmin);
   gdk_threads_leave();
-  g_print("gdk_threads_leave\n");
   
   /********************* Camera INIT *******************/
   //Now we adjust the packet size
@@ -178,13 +176,11 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
     PvAttrUint32Set(camera_params->camera_handler,"PacketSize",Size);
     PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);
     gdk_threads_enter();
-    g_print("gdk_threads_enter\n");
 
     msg = g_strdup_printf ("\nPacket size: %lu",Size);
     gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
     g_free (msg);
     gdk_threads_leave();
-    g_print("gdk_threads_leave\n");
 
   }
   else 
@@ -386,7 +382,6 @@ void camera_new_image(camera_parameters_t* camera_params)
   height=camera_params->camera_frame.Height;
 
   gdk_threads_enter();
-  g_print("gdk_threads_enter\n");
     
   camera_params->image_number++;
 
@@ -491,14 +486,12 @@ void camera_new_image(camera_parameters_t* camera_params)
   fraction=fraction>1?1:fraction;
   gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->mean_bar),fraction);
   gdk_threads_leave();
-  g_print("gdk_threads_leave\n");
 
 
   /********************* ImageMagick *************************/
   imagemagick_get_image(camera_params);
   imagemagick_process_image(camera_params,1);
   gdk_threads_enter();
-  g_print("gdk_threads_enter\n");
 
   imagemagick_display_image(camera_params);
 
@@ -509,7 +502,6 @@ void camera_new_image(camera_parameters_t* camera_params)
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->raw_image);
   gdk_threads_leave();
-  g_print("gdk_threads_leave\n");
 
   //ready for the next one
   PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,FrameDoneCB);

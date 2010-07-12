@@ -890,7 +890,7 @@
                                 <property name="homogeneous">True</property>
                                 <property name="layout_style">start</property>
                                 <child>
-                                  <object class="GtkButton" id="select_dir">
+                                  <object class="GtkButton" id="raw_select_dir">
                                     <property name="label" translatable="yes">Choose Directory</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -904,7 +904,7 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="autosave">
+                                  <object class="GtkToggleButton" id="raw_autosave">
                                     <property name="label" translatable="yes">Automatic Saving</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -1182,20 +1182,78 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkHButtonBox" id="hbuttonbox8">
+                      <object class="GtkHBox" id="hbox5">
                         <property name="visible">True</property>
                         <child>
-                          <object class="GtkButton" id="processed_save_button">
-                            <property name="label" translatable="yes">Save Image</property>
+                          <object class="GtkHButtonBox" id="hbuttonbox8">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <signal name="clicked" handler="cb_save_clicked"/>
+                            <child>
+                              <object class="GtkButton" id="processed_save_button">
+                                <property name="label" translatable="yes">Save Image</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <signal name="clicked" handler="cb_save_clicked"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="fill">False</property>
                             <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkVSeparator" id="vseparator5">
+                            <property name="visible">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="padding">5</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHButtonBox" id="hbuttonbox9">
+                            <property name="visible">True</property>
+                            <property name="spacing">10</property>
+                            <property name="homogeneous">True</property>
+                            <property name="layout_style">start</property>
+                            <child>
+                              <object class="GtkButton" id="processed_select_dir">
+                                <property name="label" translatable="yes">Choose Directory</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <signal name="clicked" handler="cb_choose_dir_clicked"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkToggleButton" id="processed_autosave">
+                                <property name="label" translatable="yes">Automatic Saving</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="fill">False</property>
+                            <property name="position">2</property>
                           </packing>
                         </child>
                       </object>

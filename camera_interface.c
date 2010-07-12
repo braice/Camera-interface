@@ -270,39 +270,47 @@ G_MODULE_EXPORT void cb_save_clicked(GtkButton *button)
 {
 
   //Check if there is an image
-  if(camera_params.image_number==0)
-    gtk_widget_show( camera_params.objects->no_image_dialog );
-  else
+  camera_params.wand_data.saving_wand=NULL;
+  if(strcmp("processed_save_button",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
   {
-    camera_params.wand_data.saving_wand=NULL;
-    if(strcmp("processed_save_button",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
+    if(camera_params.wand_data.processed_img_ok==1)
+      camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand);
+    else if(camera_params.wand_data.processed_img_old_ok==1)
     {
-      if(camera_params.wand_data.processed_img_ok==1)
-	camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand);
-      else
-	{
-	  camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand_old);
-	  g_print("Image not ready, taking the old one\n");
-	}
+      camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand_old);
+      g_print("Image not ready, taking the old one\n");
     }
-    else if(strcmp("raw_save_button",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
+    else
     {
-      if(camera_params.wand_data.raw_img_ok==1)
-	camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand);
-      else
-	{
-	  g_print("Image not ready, taking the old one\n");
-	  camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand_old);
+      gtk_widget_show( camera_params.objects->no_image_dialog );	
+      return;
+    }
+  }
+  else if(strcmp("raw_save_button",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
+  {
+    if(camera_params.wand_data.raw_img_ok==1)
+    {
+      camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand);
+    }
+    else if(camera_params.wand_data.raw_img_old_ok==1)
+    {
+      g_print("Image not ready, taking the old one\n");
+      camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand_old);
+    }
+    else
+    {
+      gtk_widget_show( camera_params.objects->no_image_dialog );	
+      return;
+    }
 
-	}
+    //we scale the image on 16 bits before saving
+    MagickLevelImage(camera_params.wand_data.saving_wand, 0, 1, 1<<((int)camera_params.sensorbits));
 	
-    }
-    if(camera_params.wand_data.saving_wand)
-    {
-      gtk_widget_show( camera_params.objects->imagesavedialog );
-      g_print("save button %s clicked\n",gtk_buildable_get_name(GTK_BUILDABLE(button)));      
-    }
-
+  }
+  if(camera_params.wand_data.saving_wand)
+  {
+    gtk_widget_show( camera_params.objects->imagesavedialog );
+    g_print("save button %s clicked\n",gtk_buildable_get_name(GTK_BUILDABLE(button)));      
   }
 }
 
@@ -347,6 +355,10 @@ G_MODULE_EXPORT void cb_image_save_ok_clicked(GtkButton *button)
 //Directory chooser
 G_MODULE_EXPORT void cb_choose_dir_clicked(GtkButton *button)
 {
+  if(strcmp("raw_select_dir",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
+    camera_params.wand_data.dirchoosing=DIR_CHOOSING_RAW;
+  if(strcmp("processed_select_dir",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
+    camera_params.wand_data.dirchoosing=DIR_CHOOSING_PROCESSED;
   gtk_widget_show( camera_params.objects->directorychooserdialog );
 }
 
@@ -360,8 +372,21 @@ G_MODULE_EXPORT void cb_directory_chooser_open_clicked(GtkButton *button)
   char *filename;
   filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (camera_params.objects->directorychooserdialog));
   g_print("Directory %s\n",filename);
-  g_free (filename);
+  if(camera_params.wand_data.dirchoosing==DIR_CHOOSING_PROCESSED)
+  {
+    if(camera_params.wand_data.processed_directory)
+      free(camera_params.wand_data.processed_directory);
+    camera_params.wand_data.processed_directory=filename;
 
+  }
+  if(camera_params.wand_data.dirchoosing==DIR_CHOOSING_RAW)
+  {
+    if(camera_params.wand_data.raw_directory)
+      free(camera_params.wand_data.raw_directory);
+    camera_params.wand_data.raw_directory=filename;
+  }
+
+  //No free because we put the filename in the right pointer
   gtk_widget_hide( camera_params.objects->directorychooserdialog );
 }
 
@@ -503,6 +528,12 @@ main( int    argc,
     camera_params.wand_data.display_magick_wand=NewMagickWand();
     camera_params.wand_data.processed_magick_wand=NewMagickWand();
     camera_params.wand_data.raw_magick_wand=NewMagickWand();
+    camera_params.wand_data.raw_directory=NULL;
+    camera_params.wand_data.processed_directory=NULL;
+    camera_params.wand_data.processed_img_ok = 0;
+    camera_params.wand_data.processed_img_old_ok = 0;
+    camera_params.wand_data.raw_img_ok = 0;
+    camera_params.wand_data.raw_img_old_ok = 0;
 
     /* We are using a threaded program we must say it to gtk */
     if( ! g_thread_supported() )
@@ -638,6 +669,10 @@ main( int    argc,
     g_slice_free( gui_objects_t, camera_params.objects );
 
 
+    if(camera_params.wand_data.raw_directory)
+      free(camera_params.wand_data.raw_directory);
+    if(camera_params.wand_data.processed_directory)
+      free(camera_params.wand_data.processed_directory);
     if(camera_params.background_set)
       DestroyMagickWand(camera_params.wand_data.background_wand);
     if(camera_params.wand_data.saving_wand)
