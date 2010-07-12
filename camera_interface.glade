@@ -451,7 +451,8 @@
                                 <child type="label">
                                   <object class="GtkLabel" id="label10">
                                     <property name="visible">True</property>
-                                    <property name="label" translatable="yes">Binning</property>
+                                    <property name="label" translatable="yes">Binning
+(not working properly)</property>
                                   </object>
                                 </child>
                               </object>
