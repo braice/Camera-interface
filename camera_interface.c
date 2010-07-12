@@ -454,7 +454,7 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
 			  2, &mean,
 			  3, &mean_soft,
 			  4, &mean_soft_roi1,
-			  4, &mean_soft_roi2,
+			  5, &mean_soft_roi2,
 			  -1);
       fprintf(file,"%d\t%f\t%f\t%f\t%f\t%f\n",image_number, time, mean, mean_soft, mean_soft_roi1, mean_soft_roi2);
       row++;
@@ -519,6 +519,7 @@ G_MODULE_EXPORT void cb_soft_togglebutton_toggled(GtkToggleButton *togglebutton,
 
 G_MODULE_EXPORT void  cb_soft_set_bg_clicked(GtkButton *button)
 {
+  
   if(camera_params.image_number>0)
     imagemagick_set_bg(&camera_params);
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params.objects->soft_background_button))==TRUE)
@@ -537,7 +538,9 @@ main( int    argc,
     MagickWandGenesis();
     camera_params.wand_data.display_magick_wand=NewMagickWand();
     camera_params.wand_data.processed_magick_wand=NewMagickWand();
+    camera_params.wand_data.processed_magick_wand_old=NewMagickWand();
     camera_params.wand_data.raw_magick_wand=NewMagickWand();
+    camera_params.wand_data.raw_magick_wand_old=NewMagickWand();
     camera_params.wand_data.raw_directory=NULL;
     camera_params.wand_data.processed_directory=NULL;
     camera_params.wand_data.processed_img_ok = 0;
@@ -698,6 +701,8 @@ main( int    argc,
       DestroyMagickWand(camera_params.wand_data.background_wand);
     if(camera_params.wand_data.saving_wand)
       DestroyMagickWand(camera_params.wand_data.saving_wand);
+    DestroyMagickWand(camera_params.wand_data.raw_magick_wand_old);
+    DestroyMagickWand(camera_params.wand_data.processed_magick_wand_old);
     DestroyMagickWand(camera_params.wand_data.raw_magick_wand);
     DestroyMagickWand(camera_params.wand_data.processed_magick_wand);
     DestroyMagickWand(camera_params.wand_data.display_magick_wand);

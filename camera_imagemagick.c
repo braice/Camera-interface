@@ -59,6 +59,7 @@ void imagemagick_get_image(camera_parameters_t* camera_params)
   if(camera_params->wand_data.raw_img_ok==1)
   {
     pthread_mutex_lock(&camera_params->wand_data.raw_img_old_mutex);
+    camera_params->wand_data.raw_magick_wand_old=DestroyMagickWand(camera_params->wand_data.raw_magick_wand_old);
     camera_params->wand_data.raw_img_old_ok=0;
     camera_params->wand_data.raw_magick_wand_old=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
     camera_params->wand_data.raw_img_old_ok=1;
@@ -124,6 +125,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   }
   pthread_mutex_lock(&camera_params->wand_data.processed_img_old_mutex);
   camera_params->wand_data.processed_img_old_ok=0;
+  camera_params->wand_data.processed_magick_wand_old=DestroyMagickWand(camera_params->wand_data.processed_magick_wand_old);
   camera_params->wand_data.processed_magick_wand_old=CloneMagickWand(camera_params->wand_data.processed_magick_wand);
   camera_params->wand_data.processed_img_old_ok=1;
   pthread_mutex_unlock(&camera_params->wand_data.processed_img_old_mutex);
@@ -165,9 +167,10 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 	//We do the substraction
 	//see http://www.simplesystems.org/RMagick/doc/constants.html#CompositeOperator
 	//http://www.imagemagick.org/api/magick-image.php#MagickCompositeImage
+	//MinusCompositeOp,
 	status=MagickCompositeImage(camera_params->wand_data.processed_magick_wand,
 			     camera_params->wand_data.background_wand,
-			     MinusCompositeOp,
+			     DifferenceCompositeOp,
 			     0,0);
 	if (status == MagickFalse)
 	  ThrowWandException(camera_params->wand_data.processed_magick_wand);
@@ -375,9 +378,10 @@ void imagemagick_set_bg(camera_parameters_t* camera_params)
   camera_params->wand_data.background_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
   camera_params->background_set=1;
   gchar *msg;
-  msg = g_strdup_printf ("Bg set, Size: %ldx%ld",
+  msg = g_strdup_printf ("Bg set, Size: %ldx%ld\nimage %d",
 			 MagickGetImageWidth(camera_params->wand_data.background_wand),
-			 MagickGetImageHeight(camera_params->wand_data.background_wand));
+			 MagickGetImageHeight(camera_params->wand_data.background_wand),
+			 camera_params->image_number);
   pthread_mutex_unlock(&camera_params->wand_data.background_img_mutex);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_background_info_text)),msg,-1);
   g_free (msg);
