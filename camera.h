@@ -125,12 +125,18 @@ typedef struct magickwand_data_t{
   MagickWand *processed_magick_wand_old;  //The magickwand data
   int processed_img_ok;
   int processed_img_old_ok;
+  pthread_mutex_t processed_img_mutex;
+  pthread_mutex_t processed_img_old_mutex;
   MagickWand *display_magick_wand;  //The magickwand data
+  pthread_mutex_t display_img_mutex;
   MagickWand *raw_magick_wand;  //The magickwand data
   MagickWand *raw_magick_wand_old;  //The magickwand data
   int raw_img_ok;
   int raw_img_old_ok;
+  pthread_mutex_t raw_img_mutex;
+  pthread_mutex_t raw_img_old_mutex;
   MagickWand *background_wand;
+  pthread_mutex_t background_img_mutex;
   MagickWand *saving_wand;
   char *raw_directory;
   char *processed_directory;

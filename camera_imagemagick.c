@@ -46,8 +46,8 @@ void update_soft_val(camera_parameters_t* camera_params)
   //If there is no image to be processed we return
   if((camera_params->wand_data.raw_img_ok==0)&&(camera_params->wand_data.raw_img_old_ok==0))
     return;
-  //imagemagick_process_image(camera_params,0);
-  //imagemagick_display_image(camera_params);
+  imagemagick_process_image(camera_params,0);
+  imagemagick_display_image(camera_params);
 }
 
 void imagemagick_get_image(camera_parameters_t* camera_params)
@@ -58,12 +58,16 @@ void imagemagick_get_image(camera_parameters_t* camera_params)
   //We save the old one if we already have an image
   if(camera_params->wand_data.raw_img_ok==1)
   {
-    //NOTE : USE MUTEX
+    pthread_mutex_lock(&camera_params->wand_data.raw_img_old_mutex);
     camera_params->wand_data.raw_img_old_ok=0;
     camera_params->wand_data.raw_magick_wand_old=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
     camera_params->wand_data.raw_img_old_ok=1;
+    pthread_mutex_unlock(&camera_params->wand_data.raw_img_old_mutex);
+
   }
 
+  //We lock the mutex
+  pthread_mutex_lock(&camera_params->wand_data.raw_img_mutex);
   camera_params->wand_data.raw_img_ok=0;
 
   ClearMagickWand(camera_params->wand_data.raw_magick_wand);
@@ -76,6 +80,9 @@ void imagemagick_get_image(camera_parameters_t* camera_params)
   {
     camera_params->wand_data.raw_img_ok=1;
   }
+  //We unlock the mutex
+  pthread_mutex_unlock(&camera_params->wand_data.raw_img_mutex);
+
 
 }
 
@@ -115,9 +122,13 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
     add_to_statusbar(camera_params, 1, "Image processing : No frame to process");
     return;
   }
+  pthread_mutex_lock(&camera_params->wand_data.processed_img_old_mutex);
   camera_params->wand_data.processed_img_old_ok=0;
   camera_params->wand_data.processed_magick_wand_old=CloneMagickWand(camera_params->wand_data.processed_magick_wand);
   camera_params->wand_data.processed_img_old_ok=1;
+  pthread_mutex_unlock(&camera_params->wand_data.processed_img_old_mutex);
+  //We lock the mutex
+  pthread_mutex_lock(&camera_params->wand_data.processed_img_mutex);
   camera_params->wand_data.processed_img_ok=0;
   camera_params->wand_data.processed_magick_wand=DestroyMagickWand(camera_params->wand_data.processed_magick_wand);
   //If the new image is not ok, we process the old one
@@ -132,6 +143,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   {
     if(camera_params->background_set)
     {
+      pthread_mutex_lock(&camera_params->wand_data.background_img_mutex);
       //We check if the sizes are compatible
       if((MagickGetImageWidth(camera_params->wand_data.background_wand)!=MagickGetImageWidth(camera_params->wand_data.processed_magick_wand))||
 	 (MagickGetImageHeight(camera_params->wand_data.background_wand)!=MagickGetImageHeight(camera_params->wand_data.processed_magick_wand)))
@@ -161,7 +173,10 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 	  ThrowWandException(camera_params->wand_data.processed_magick_wand);
 
       }
-    }else{
+      pthread_mutex_unlock(&camera_params->wand_data.background_img_mutex);
+    }
+    else
+    {
       gchar *msg;
       if(threads_enter)
 	gdk_threads_enter();
@@ -244,6 +259,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   camera_params->wand_data.processed_img_ok=1;
 
   //We copy the real image for display (for keeping the other one for saving)
+  pthread_mutex_lock(&camera_params->wand_data.display_img_mutex);
   camera_params->wand_data.display_magick_wand=DestroyMagickWand(camera_params->wand_data.display_magick_wand);
   camera_params->wand_data.display_magick_wand=CloneMagickWand(camera_params->wand_data.processed_magick_wand);
 
@@ -306,10 +322,15 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
       DestroyMagickWand(temp_wand);
     }
   }
-  
   /******************** Compute the overall mean  **********************/
   double mean,std;
+  long int img_width,img_height;
+  img_width = MagickGetImageWidth(camera_params->wand_data.processed_magick_wand);
+  img_height = MagickGetImageHeight(camera_params->wand_data.processed_magick_wand);
   MagickGetImageChannelMean(camera_params->wand_data.processed_magick_wand,AllChannels,&mean,&std);
+  //We unlock the mutex
+  pthread_mutex_unlock(&camera_params->wand_data.display_img_mutex);
+  pthread_mutex_unlock(&camera_params->wand_data.processed_img_mutex);
 
   /******************** Fill the treeview     **********************/
   if(camera_params->list_store_iter_ok)
@@ -329,8 +350,8 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   gchar *msg;
   
   msg = g_strdup_printf ("Size: %ldx%ld\tMean %.3lf\tStd: %.3lf\nMean1 %.3lf\tStd1: %.3lf\tMean2 %.3lf\tStd2: %.3lf",
-			 MagickGetImageWidth(camera_params->wand_data.processed_magick_wand),
-			 MagickGetImageHeight(camera_params->wand_data.processed_magick_wand),
+			 img_width,
+			 img_height,
 			 mean, std,
 			 mean_roi1, std_roi1,
 			 mean_roi2, std_roi2);
@@ -347,6 +368,8 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 
 void imagemagick_set_bg(camera_parameters_t* camera_params)
 {
+  pthread_mutex_lock(&camera_params->wand_data.background_img_mutex);
+
   if(camera_params->background_set)
     camera_params->wand_data.background_wand=DestroyMagickWand(camera_params->wand_data.background_wand);
   camera_params->wand_data.background_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
@@ -355,6 +378,7 @@ void imagemagick_set_bg(camera_parameters_t* camera_params)
   msg = g_strdup_printf ("Bg set, Size: %ldx%ld",
 			 MagickGetImageWidth(camera_params->wand_data.background_wand),
 			 MagickGetImageHeight(camera_params->wand_data.background_wand));
+  pthread_mutex_unlock(&camera_params->wand_data.background_img_mutex);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_background_info_text)),msg,-1);
   g_free (msg);
 }
@@ -362,7 +386,7 @@ void imagemagick_set_bg(camera_parameters_t* camera_params)
 void imagemagick_display_image(camera_parameters_t* camera_params)
 {
   int width,height;
-
+  pthread_mutex_lock(&camera_params->wand_data.display_img_mutex);
   width=MagickGetImageWidth(camera_params->wand_data.display_magick_wand);
   height=MagickGetImageHeight(camera_params->wand_data.display_magick_wand);
 
@@ -410,6 +434,7 @@ void imagemagick_display_image(camera_parameters_t* camera_params)
   }
 
 
+  pthread_mutex_unlock(&camera_params->wand_data.display_img_mutex);
 
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->processed_image);

@@ -274,11 +274,17 @@ G_MODULE_EXPORT void cb_save_clicked(GtkButton *button)
   if(strcmp("processed_save_button",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
   {
     if(camera_params.wand_data.processed_img_ok==1)
+    {
+      pthread_mutex_lock(&camera_params.wand_data.processed_img_mutex);
       camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand);
+      pthread_mutex_unlock(&camera_params.wand_data.processed_img_mutex);
+    }
     else if(camera_params.wand_data.processed_img_old_ok==1)
     {
+      pthread_mutex_lock(&camera_params.wand_data.processed_img_old_mutex);
       camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand_old);
-      g_print("Image not ready, taking the old one\n");
+      g_print("Image actually processing, taking the old one\n");
+      pthread_mutex_unlock(&camera_params.wand_data.processed_img_old_mutex);
     }
     else
     {
@@ -290,12 +296,16 @@ G_MODULE_EXPORT void cb_save_clicked(GtkButton *button)
   {
     if(camera_params.wand_data.raw_img_ok==1)
     {
+      pthread_mutex_lock(&camera_params.wand_data.raw_img_mutex);
       camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand);
+      pthread_mutex_unlock(&camera_params.wand_data.raw_img_mutex);
     }
     else if(camera_params.wand_data.raw_img_old_ok==1)
     {
+      pthread_mutex_lock(&camera_params.wand_data.raw_img_old_mutex);
       g_print("Image not ready, taking the old one\n");
       camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand_old);
+      pthread_mutex_unlock(&camera_params.wand_data.raw_img_old_mutex);
     }
     else
     {
@@ -534,7 +544,12 @@ main( int    argc,
     camera_params.wand_data.processed_img_old_ok = 0;
     camera_params.wand_data.raw_img_ok = 0;
     camera_params.wand_data.raw_img_old_ok = 0;
-
+    pthread_mutex_init(&camera_params.wand_data.processed_img_mutex, NULL);
+    pthread_mutex_init(&camera_params.wand_data.raw_img_mutex, NULL);
+    pthread_mutex_init(&camera_params.wand_data.display_img_mutex, NULL);
+    pthread_mutex_init(&camera_params.wand_data.processed_img_old_mutex, NULL);
+    pthread_mutex_init(&camera_params.wand_data.raw_img_old_mutex, NULL);
+    pthread_mutex_init(&camera_params.wand_data.background_img_mutex, NULL);
     /* We are using a threaded program we must say it to gtk */
     if( ! g_thread_supported() )
       g_thread_init(NULL);
@@ -669,6 +684,12 @@ main( int    argc,
     g_slice_free( gui_objects_t, camera_params.objects );
 
 
+    pthread_mutex_destroy(&camera_params.wand_data.processed_img_old_mutex);
+    pthread_mutex_destroy(&camera_params.wand_data.processed_img_mutex);
+    pthread_mutex_destroy(&camera_params.wand_data.raw_img_old_mutex);
+    pthread_mutex_destroy(&camera_params.wand_data.raw_img_mutex);
+    pthread_mutex_destroy(&camera_params.wand_data.display_img_mutex);
+    pthread_mutex_destroy(&camera_params.wand_data.background_img_mutex);
     if(camera_params.wand_data.raw_directory)
       free(camera_params.wand_data.raw_directory);
     if(camera_params.wand_data.processed_directory)
