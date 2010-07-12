@@ -85,6 +85,12 @@ typedef struct gui_objects_t{
   GtkWidget *soft_background_button;
   GtkWidget *raw_autosave;
   GtkWidget *processed_autosave;
+  GtkWidget *processed_mean_bar;
+  GtkWidget *processed_mean_roi1;
+  GtkWidget *processed_mean_roi1_bar;
+  GtkWidget *processed_mean_roi2;
+  GtkWidget *processed_mean_roi2_bar;
+  GtkWidget *soft_dont_update_current;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -115,6 +121,12 @@ typedef struct gui_objects_t{
   GtkAdjustment *ROI_soft_mean_adjust_width2;
   GtkAdjustment *ROI_soft_mean_adjust_y2;
   GtkAdjustment *ROI_soft_mean_adjust_height2;
+  GtkAdjustment *processed_mean_min_adj;
+  GtkAdjustment *processed_mean_max_adj;
+  GtkAdjustment *processed_mean_roi1_min_adj;
+  GtkAdjustment *processed_mean_roi1_max_adj;
+  GtkAdjustment *processed_mean_roi2_min_adj;
+  GtkAdjustment *processed_mean_roi2_max_adj;
   GtkListStore *statistics_list;
 }gui_objects_t;
 

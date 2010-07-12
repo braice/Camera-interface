@@ -43,6 +43,8 @@
 
 void update_soft_val(camera_parameters_t* camera_params)
 {
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_dont_update_current))==TRUE)
+    return;
   //If there is no image to be processed we return
   if((camera_params->wand_data.raw_img_ok==0)&&(camera_params->wand_data.raw_img_old_ok==0))
     return;
@@ -294,6 +296,12 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
       if (status == MagickFalse)
 	ThrowWandException(camera_params->wand_data.display_magick_wand);
       DestroyMagickWand(temp_wand);
+      /********************** mean bar ***************************/
+      gdouble fraction;
+      fraction=(mean_roi1-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_min_adj));
+      fraction=fraction<0?0:fraction;
+      fraction=fraction>1?1:fraction;
+      gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_roi1_bar),fraction);
     }
   }
 
@@ -323,6 +331,12 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
       if (status == MagickFalse)
 	ThrowWandException(camera_params->wand_data.display_magick_wand);
       DestroyMagickWand(temp_wand);
+      /********************** mean bar ***************************/
+      gdouble fraction;
+      fraction=(mean_roi2-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_min_adj));
+      fraction=fraction<0?0:fraction;
+      fraction=fraction>1?1:fraction;
+      gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_roi2_bar),fraction);
     }
   }
   /******************** Compute the overall mean  **********************/
@@ -331,6 +345,13 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   img_width = MagickGetImageWidth(camera_params->wand_data.processed_magick_wand);
   img_height = MagickGetImageHeight(camera_params->wand_data.processed_magick_wand);
   MagickGetImageChannelMean(camera_params->wand_data.processed_magick_wand,AllChannels,&mean,&std);
+  /********************** mean bar ***************************/
+  gdouble fraction;
+  fraction=(mean-gtk_adjustment_get_value(camera_params->objects->processed_mean_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_min_adj));
+  fraction=fraction<0?0:fraction;
+  fraction=fraction>1?1:fraction;
+  gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_bar),fraction);
+
   //We unlock the mutex
   pthread_mutex_unlock(&camera_params->wand_data.display_img_mutex);
   pthread_mutex_unlock(&camera_params->wand_data.processed_img_mutex);

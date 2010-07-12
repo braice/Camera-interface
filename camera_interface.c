@@ -515,6 +515,22 @@ G_MODULE_EXPORT void cb_soft_togglebutton_toggled(GtkToggleButton *togglebutton,
     update_soft_val(&camera_params);
 }
 
+//We show or hide the mean bars
+G_MODULE_EXPORT void cb_soft_compute_roi_toggled(GtkToggleButton *togglebutton,gpointer   data )
+{
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params.objects->soft_compute_mean_roi1))==TRUE)
+    gtk_widget_show_all(camera_params.objects->processed_mean_roi1);
+  else
+    gtk_widget_hide_all(camera_params.objects->processed_mean_roi1);
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params.objects->soft_compute_mean_roi2))==TRUE)
+    gtk_widget_show_all(camera_params.objects->processed_mean_roi2);
+  else
+    gtk_widget_hide_all(camera_params.objects->processed_mean_roi2);
+    update_soft_val(&camera_params);
+}
+
+
+
 /*** Background ****/
 
 G_MODULE_EXPORT void  cb_soft_set_bg_clicked(GtkButton *button)
@@ -619,6 +635,12 @@ main( int    argc,
     GW( soft_compute_mean_roi2 );
     GW( soft_background_info_text );
     GW( soft_background_button );
+    GW( processed_mean_bar );
+    GW( processed_mean_roi1 );
+    GW( processed_mean_roi1_bar );
+    GW( processed_mean_roi2 );
+    GW( processed_mean_roi2_bar );
+    GW( soft_dont_update_current );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -652,6 +674,12 @@ main( int    argc,
     GA( ROI_soft_mean_adjust_width2 );
     GA( ROI_soft_mean_adjust_y2 );
     GA( ROI_soft_mean_adjust_height2 );
+    GA( processed_mean_min_adj );
+    GA( processed_mean_max_adj );
+    GA( processed_mean_roi1_min_adj );
+    GA( processed_mean_roi1_max_adj );
+    GA( processed_mean_roi2_min_adj );
+    GA( processed_mean_roi2_max_adj );
 #undef GA
 #define GL( name ) CH_GET_LIST_STORE( builder, name, data )
     GL( statistics_list );
@@ -665,6 +693,20 @@ main( int    argc,
  
     /* Show window. All other widgets are automatically shown by GtkBuilder */
     gtk_widget_show( camera_params.objects->main_window );
+
+    //Hide some of the widgets
+    gtk_widget_hide_all(camera_params.objects->processed_mean_roi1);
+    gtk_widget_hide_all(camera_params.objects->processed_mean_roi2);
+    //Good values, the images are stored on 16 bits
+    gtk_adjustment_set_upper(camera_params.objects->processed_mean_min_adj,1<<16);
+    gtk_adjustment_set_upper(camera_params.objects->processed_mean_max_adj,1<<16);
+    gtk_adjustment_set_value(camera_params.objects->processed_mean_max_adj,1<<16);
+    gtk_adjustment_set_upper(camera_params.objects->processed_mean_roi1_min_adj,1<<16);
+    gtk_adjustment_set_upper(camera_params.objects->processed_mean_roi1_max_adj,1<<16);
+    gtk_adjustment_set_value(camera_params.objects->processed_mean_roi1_max_adj,1<<16);
+    gtk_adjustment_set_upper(camera_params.objects->processed_mean_roi2_min_adj,1<<16);
+    gtk_adjustment_set_upper(camera_params.objects->processed_mean_roi2_max_adj,1<<16);
+    gtk_adjustment_set_value(camera_params.objects->processed_mean_roi2_max_adj,1<<16);
 
     /* Start the camera thread */
     ret=pthread_create(&(camera_params.camera_thread), NULL, camera_thread_func, &camera_params);
