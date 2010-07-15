@@ -46,7 +46,10 @@ void update_soft_val(camera_parameters_t* camera_params)
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_dont_update_current))==TRUE)
     return;
   //If there is no image to be processed we return
-  if((camera_params->wand_data.raw_img_ok==0)&&(camera_params->wand_data.raw_img_old_ok==0))
+  if(camera_params->wand_data.raw_img_ok==0)
+    return;
+  //If we are already processing an image we quit
+  if(camera_params->wand_data.processed_img_ok==0)
     return;
   imagemagick_process_image(camera_params,0);
   imagemagick_display_image(camera_params);
@@ -56,18 +59,6 @@ void imagemagick_get_image(camera_parameters_t* camera_params)
 {
   MagickBooleanType status;
 
-
-  //We save the old one if we already have an image
-  if(camera_params->wand_data.raw_img_ok==1)
-  {
-    pthread_mutex_lock(&camera_params->wand_data.raw_img_old_mutex);
-    camera_params->wand_data.raw_magick_wand_old=DestroyMagickWand(camera_params->wand_data.raw_magick_wand_old);
-    camera_params->wand_data.raw_img_old_ok=0;
-    camera_params->wand_data.raw_magick_wand_old=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
-    camera_params->wand_data.raw_img_old_ok=1;
-    pthread_mutex_unlock(&camera_params->wand_data.raw_img_old_mutex);
-
-  }
 
   //We lock the mutex
   pthread_mutex_lock(&camera_params->wand_data.raw_img_mutex);
@@ -120,26 +111,19 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 {
   MagickBooleanType status;
   //We save the old one
-  if((camera_params->wand_data.raw_img_ok==0)&&(camera_params->wand_data.raw_img_old_ok==0))
+  if((camera_params->wand_data.raw_img_ok==0))
   {
     add_to_statusbar(camera_params, 1, "Image processing : No frame to process");
     return;
   }
-  pthread_mutex_lock(&camera_params->wand_data.processed_img_old_mutex);
-  camera_params->wand_data.processed_img_old_ok=0;
-  camera_params->wand_data.processed_magick_wand_old=DestroyMagickWand(camera_params->wand_data.processed_magick_wand_old);
-  camera_params->wand_data.processed_magick_wand_old=CloneMagickWand(camera_params->wand_data.processed_magick_wand);
-  camera_params->wand_data.processed_img_old_ok=1;
-  pthread_mutex_unlock(&camera_params->wand_data.processed_img_old_mutex);
   //We lock the mutex
   pthread_mutex_lock(&camera_params->wand_data.processed_img_mutex);
   camera_params->wand_data.processed_img_ok=0;
   camera_params->wand_data.processed_magick_wand=DestroyMagickWand(camera_params->wand_data.processed_magick_wand);
-  //If the new image is not ok, we process the old one
-  if(camera_params->wand_data.raw_img_ok==1)
-    camera_params->wand_data.processed_magick_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
-  else
-    camera_params->wand_data.processed_magick_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand_old);
+  //We copy the raw image
+  pthread_mutex_lock(&camera_params->wand_data.raw_img_mutex);
+  camera_params->wand_data.processed_magick_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
+  pthread_mutex_unlock(&camera_params->wand_data.raw_img_mutex);
   MagickSetImageDepth(camera_params->wand_data.processed_magick_wand,16);
 
   /************** Background substraction *****************/

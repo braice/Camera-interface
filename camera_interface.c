@@ -270,48 +270,23 @@ G_MODULE_EXPORT void cb_save_clicked(GtkButton *button)
 {
 
   //Check if there is an image
+  if(camera_params.image_number==0)
+  {
+    gtk_widget_show( camera_params.objects->no_image_dialog );	
+    return;
+  }
   camera_params.wand_data.saving_wand=NULL;
   if(strcmp("processed_save_button",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
   {
-    if(camera_params.wand_data.processed_img_ok==1)
-    {
-      pthread_mutex_lock(&camera_params.wand_data.processed_img_mutex);
-      camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand);
-      pthread_mutex_unlock(&camera_params.wand_data.processed_img_mutex);
-    }
-    else if(camera_params.wand_data.processed_img_old_ok==1)
-    {
-      pthread_mutex_lock(&camera_params.wand_data.processed_img_old_mutex);
-      camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand_old);
-      g_print("Image actually processing, taking the old one\n");
-      pthread_mutex_unlock(&camera_params.wand_data.processed_img_old_mutex);
-    }
-    else
-    {
-      gtk_widget_show( camera_params.objects->no_image_dialog );	
-      return;
-    }
+    pthread_mutex_lock(&camera_params.wand_data.processed_img_mutex);
+    camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.processed_magick_wand);
+    pthread_mutex_unlock(&camera_params.wand_data.processed_img_mutex);
   }
   else if(strcmp("raw_save_button",gtk_buildable_get_name(GTK_BUILDABLE(button)))==0)
   {
-    if(camera_params.wand_data.raw_img_ok==1)
-    {
-      pthread_mutex_lock(&camera_params.wand_data.raw_img_mutex);
-      camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand);
-      pthread_mutex_unlock(&camera_params.wand_data.raw_img_mutex);
-    }
-    else if(camera_params.wand_data.raw_img_old_ok==1)
-    {
-      pthread_mutex_lock(&camera_params.wand_data.raw_img_old_mutex);
-      g_print("Image not ready, taking the old one\n");
-      camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand_old);
-      pthread_mutex_unlock(&camera_params.wand_data.raw_img_old_mutex);
-    }
-    else
-    {
-      gtk_widget_show( camera_params.objects->no_image_dialog );	
-      return;
-    }
+    pthread_mutex_lock(&camera_params.wand_data.raw_img_mutex);
+    camera_params.wand_data.saving_wand=CloneMagickWand(camera_params.wand_data.raw_magick_wand);
+    pthread_mutex_unlock(&camera_params.wand_data.raw_img_mutex);
 
     //we scale the image on 16 bits before saving
     MagickLevelImage(camera_params.wand_data.saving_wand, 0, 1, 1<<((int)camera_params.sensorbits));
@@ -554,20 +529,14 @@ main( int    argc,
     MagickWandGenesis();
     camera_params.wand_data.display_magick_wand=NewMagickWand();
     camera_params.wand_data.processed_magick_wand=NewMagickWand();
-    camera_params.wand_data.processed_magick_wand_old=NewMagickWand();
     camera_params.wand_data.raw_magick_wand=NewMagickWand();
-    camera_params.wand_data.raw_magick_wand_old=NewMagickWand();
     camera_params.wand_data.raw_directory=NULL;
     camera_params.wand_data.processed_directory=NULL;
     camera_params.wand_data.processed_img_ok = 0;
-    camera_params.wand_data.processed_img_old_ok = 0;
     camera_params.wand_data.raw_img_ok = 0;
-    camera_params.wand_data.raw_img_old_ok = 0;
     pthread_mutex_init(&camera_params.wand_data.processed_img_mutex, NULL);
     pthread_mutex_init(&camera_params.wand_data.raw_img_mutex, NULL);
     pthread_mutex_init(&camera_params.wand_data.display_img_mutex, NULL);
-    pthread_mutex_init(&camera_params.wand_data.processed_img_old_mutex, NULL);
-    pthread_mutex_init(&camera_params.wand_data.raw_img_old_mutex, NULL);
     pthread_mutex_init(&camera_params.wand_data.background_img_mutex, NULL);
     /* We are using a threaded program we must say it to gtk */
     if( ! g_thread_supported() )
@@ -729,9 +698,7 @@ main( int    argc,
     g_slice_free( gui_objects_t, camera_params.objects );
 
 
-    pthread_mutex_destroy(&camera_params.wand_data.processed_img_old_mutex);
     pthread_mutex_destroy(&camera_params.wand_data.processed_img_mutex);
-    pthread_mutex_destroy(&camera_params.wand_data.raw_img_old_mutex);
     pthread_mutex_destroy(&camera_params.wand_data.raw_img_mutex);
     pthread_mutex_destroy(&camera_params.wand_data.display_img_mutex);
     pthread_mutex_destroy(&camera_params.wand_data.background_img_mutex);
@@ -743,8 +710,6 @@ main( int    argc,
       DestroyMagickWand(camera_params.wand_data.background_wand);
     if(camera_params.wand_data.saving_wand)
       DestroyMagickWand(camera_params.wand_data.saving_wand);
-    DestroyMagickWand(camera_params.wand_data.raw_magick_wand_old);
-    DestroyMagickWand(camera_params.wand_data.processed_magick_wand_old);
     DestroyMagickWand(camera_params.wand_data.raw_magick_wand);
     DestroyMagickWand(camera_params.wand_data.processed_magick_wand);
     DestroyMagickWand(camera_params.wand_data.display_magick_wand);
