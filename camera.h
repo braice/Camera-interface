@@ -33,11 +33,14 @@
 #include <PvRegIo.h>
 #include <wand/MagickWand.h>
 
-#define FRAME_WAIT_TIMEOUT 100
-
 /* Convenience macros for obtaining objects from UI file */
+#if 0
 #define CH_GET_OBJECT( builder, name, type, data ) \
-    camera_params.objects->name = type( gtk_builder_get_object( builder, #name ) )
+  camera_params.objects->name = type( gtk_builder_get_object( builder, #name ) ); \
+  g_print("Object %s address %p\n",#name,(void *)camera_params.objects->name)
+#endif
+#define CH_GET_OBJECT( builder, name, type, data ) \
+  camera_params.objects->name = type( gtk_builder_get_object( builder, #name ) )
 #define CH_GET_WIDGET( builder, name, data ) \
     CH_GET_OBJECT( builder, name, GTK_WIDGET, data )
 #define CH_GET_ADJUSTMENT( builder, name, data ) \
@@ -52,7 +55,6 @@ typedef struct gui_objects_t{
   GtkWidget *image_number;
   GtkWidget *raw_image;
   GtkWidget *processed_image;
-  GtkWidget *ext_trig;
   GtkWidget *trig_mult;
   GtkWidget *trig_single;
   GtkWidget *trig_cont;

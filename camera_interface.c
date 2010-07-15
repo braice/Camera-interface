@@ -94,11 +94,8 @@ G_MODULE_EXPORT void cb_destroy( GtkWidget *widget,
                      gpointer   data )
 {
 
-  g_print ("destroy event occurred shutting down the thread\n");
-  //We kill the camera thread
-  camera_params.camera_thread_shutdown=1;
-  pthread_join(camera_params.camera_thread, NULL);
- 
+  g_print ("destroy event occurred\n");
+
   gtk_main_quit ();
 }
 
@@ -573,7 +570,6 @@ main( int    argc,
     GW( image_number );
     GW( raw_image );
     GW( processed_image );
-    GW( ext_trig );
     GW( trig_mult );
     GW( trig_single );
     GW( trig_cont );
@@ -686,6 +682,10 @@ main( int    argc,
  
     /* Start main loop */
     gtk_main();
+
+    //We kill the camera thread
+    camera_params.camera_thread_shutdown=1;
+    pthread_join(camera_params.camera_thread, NULL);
 
     /* Release gtk's global lock */
     gdk_threads_leave();

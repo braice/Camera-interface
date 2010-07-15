@@ -111,6 +111,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 {
   MagickBooleanType status;
   //We save the old one
+
   if((camera_params->wand_data.raw_img_ok==0))
   {
     add_to_statusbar(camera_params, 1, "Image processing : No frame to process");
@@ -183,7 +184,8 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   {
     MagickLevelImage(camera_params->wand_data.processed_magick_wand, gtk_adjustment_get_value(camera_params->objects->soft_level_min_adj), 1, gtk_adjustment_get_value(camera_params->objects->soft_level_max_adj));
 
-    MagickBrightnessContrastImage(camera_params->wand_data.processed_magick_wand,gtk_adjustment_get_value(camera_params->objects->soft_brightness_adj),gtk_adjustment_get_value(camera_params->objects->soft_contrast_adj));
+    if((gtk_adjustment_get_value(camera_params->objects->soft_brightness_adj)!=0)||(gtk_adjustment_get_value(camera_params->objects->soft_contrast_adj)!=0))
+      MagickBrightnessContrastImage(camera_params->wand_data.processed_magick_wand,gtk_adjustment_get_value(camera_params->objects->soft_brightness_adj),gtk_adjustment_get_value(camera_params->objects->soft_contrast_adj));
   }
 
 
@@ -217,6 +219,8 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 		      n*MagickGetImageHeight(camera_params->wand_data.processed_magick_wand),
 		      PointFilter,0);
   }
+
+
   /**************** Image rotation ****************/
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_rotate_image))==TRUE)
   {
@@ -228,6 +232,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
       ThrowWandException(camera_params->wand_data.processed_magick_wand);
     DestroyPixelWand(black);
   }
+
 
   /************* Software ROI *********************/
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_cut_img))==TRUE)
@@ -251,6 +256,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   pthread_mutex_lock(&camera_params->wand_data.display_img_mutex);
   camera_params->wand_data.display_magick_wand=DestroyMagickWand(camera_params->wand_data.display_magick_wand);
   camera_params->wand_data.display_magick_wand=CloneMagickWand(camera_params->wand_data.processed_magick_wand);
+
 
 
   /******************** Compute the mean over a ROI and display the ROI **********************/
@@ -285,7 +291,12 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
       fraction=(mean_roi1-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_min_adj));
       fraction=fraction<0?0:fraction;
       fraction=fraction>1?1:fraction;
+      if(threads_enter)
+	gdk_threads_enter();
       gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_roi1_bar),fraction);
+      if(threads_enter)
+	gdk_threads_leave();
+
     }
   }
 
@@ -320,9 +331,14 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
       fraction=(mean_roi2-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_min_adj));
       fraction=fraction<0?0:fraction;
       fraction=fraction>1?1:fraction;
+      if(threads_enter)
+	gdk_threads_enter();
       gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_roi2_bar),fraction);
+      if(threads_enter)
+	gdk_threads_leave();
     }
   }
+
   /******************** Compute the overall mean  **********************/
   double mean,std;
   long int img_width,img_height;
@@ -334,11 +350,17 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   fraction=(mean-gtk_adjustment_get_value(camera_params->objects->processed_mean_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_min_adj));
   fraction=fraction<0?0:fraction;
   fraction=fraction>1?1:fraction;
+  if(threads_enter)
+    gdk_threads_enter();
   gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_bar),fraction);
+  if(threads_enter)
+    gdk_threads_leave();
+  
 
   //We unlock the mutex
   pthread_mutex_unlock(&camera_params->wand_data.display_img_mutex);
   pthread_mutex_unlock(&camera_params->wand_data.processed_img_mutex);
+
 
   /******************** Fill the treeview     **********************/
   if(camera_params->list_store_iter_ok)
@@ -353,6 +375,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
     if(threads_enter)
       gdk_threads_leave();
   }
+
   /******************** Display image data   **********************/
 
   gchar *msg;
@@ -370,7 +393,6 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
     gdk_threads_leave();
   g_free (msg);
   
-
 }
 
 
@@ -395,6 +417,7 @@ void imagemagick_set_bg(camera_parameters_t* camera_params)
 void imagemagick_display_image(camera_parameters_t* camera_params)
 {
   int width,height;
+  g_print ("display\n");
   pthread_mutex_lock(&camera_params->wand_data.display_img_mutex);
   width=MagickGetImageWidth(camera_params->wand_data.display_magick_wand);
   height=MagickGetImageHeight(camera_params->wand_data.display_magick_wand);
@@ -447,5 +470,6 @@ void imagemagick_display_image(camera_parameters_t* camera_params)
 
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->processed_image);
+  g_print ("done\n\n");
 
 }
