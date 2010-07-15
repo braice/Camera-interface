@@ -242,6 +242,11 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
                      gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_height),
                      gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_x),
                      gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_y));
+    //We set the image page to avoid disturbing other functions below
+    MagickSetImagePage(camera_params->wand_data.processed_magick_wand,
+		       gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_width),
+		       gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_height),
+		       0,0);
   }
 
 
