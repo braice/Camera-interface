@@ -601,8 +601,10 @@ void *camera_thread_func(void* arg)
 	  //If we are already processing an image we quit
 	  if(camera_params->wand_data.processed_img_ok==0)
 	    continue;
-	  imagemagick_process_image(camera_params,0);
+	  imagemagick_process_image(camera_params,1);
+	  gdk_threads_enter();
 	  imagemagick_display_image(camera_params);
+	  gdk_threads_leave();
 	  camera_params->processed_image_needs_update=0;
 	}
 
