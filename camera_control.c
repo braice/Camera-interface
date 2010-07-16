@@ -591,6 +591,21 @@ void *camera_thread_func(void* arg)
     else if((camera_params->grabbing_images==1) && (camera_params->grab_images==1))
     {
       usleep(100000); //some waiting 
+      if(camera_params->processed_image_needs_update)
+	{
+	  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_dont_update_current))==TRUE)
+	    continue;
+	  //If there is no image to be processed we return
+	  if(camera_params->wand_data.raw_img_ok==0)
+	    continue;
+	  //If we are already processing an image we quit
+	  if(camera_params->wand_data.processed_img_ok==0)
+	    continue;
+	  imagemagick_process_image(camera_params,0);
+	  imagemagick_display_image(camera_params);
+	  camera_params->processed_image_needs_update=0;
+	}
+
     }
     else //we are not getting image and we don't want to, we wait for the user to press the button
       usleep(100000); //some waiting 

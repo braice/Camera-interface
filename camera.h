@@ -196,6 +196,8 @@ typedef struct camera_parameters_t{
   int background_set;
   //The magick wand/imagemagick information
   magickwand_data_t wand_data;
+  //Do we need to reprocess ?
+  int processed_image_needs_update;
   //The GUI objects
   gui_objects_t *objects;
 }camera_parameters_t;

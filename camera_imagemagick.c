@@ -43,16 +43,7 @@
 
 void update_soft_val(camera_parameters_t* camera_params)
 {
-  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_dont_update_current))==TRUE)
-    return;
-  //If there is no image to be processed we return
-  if(camera_params->wand_data.raw_img_ok==0)
-    return;
-  //If we are already processing an image we quit
-  if(camera_params->wand_data.processed_img_ok==0)
-    return;
-  imagemagick_process_image(camera_params,0);
-  imagemagick_display_image(camera_params);
+  camera_params->processed_image_needs_update=1;
 }
 
 void imagemagick_get_image(camera_parameters_t* camera_params)
