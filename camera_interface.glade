@@ -1675,130 +1675,6 @@ as background</property>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkExpander" id="expander1">
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <child>
-                                  <object class="GtkVBox" id="vbox19">
-                                    <property name="visible">True</property>
-                                    <child>
-                                      <object class="GtkLabel" id="label28">
-                                        <property name="visible">True</property>
-                                        <property name="label" translatable="yes">Brightness</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkSpinButton" id="spinbutton1">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
-                                        <property name="adjustment">soft_brightness_adj</property>
-                                        <property name="digits">1</property>
-                                        <property name="numeric">True</property>
-                                        <signal name="changed" handler="cb_soft_editable_changed"/>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkHScale" id="hscale1">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="adjustment">soft_brightness_adj</property>
-                                        <property name="restrict_to_fill_level">False</property>
-                                        <property name="draw_value">False</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">2</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkLabel" id="label29">
-                                        <property name="visible">True</property>
-                                        <property name="label" translatable="yes">Contrast</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">3</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkSpinButton" id="spinbutton2">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
-                                        <property name="adjustment">soft_contrast_adj</property>
-                                        <property name="digits">1</property>
-                                        <property name="numeric">True</property>
-                                        <signal name="changed" handler="cb_soft_editable_changed"/>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">4</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkHScale" id="hscale2">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="adjustment">soft_contrast_adj</property>
-                                        <property name="draw_value">False</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">5</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkHButtonBox" id="hbuttonbox6">
-                                        <property name="visible">True</property>
-                                        <child>
-                                          <object class="GtkButton" id="soft_reset_brightcont">
-                                            <property name="label" translatable="yes">Reset</property>
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="receives_default">True</property>
-                                            <signal name="clicked" handler="cb_soft_brightcont_reset_clicked"/>
-                                          </object>
-                                          <packing>
-                                            <property name="expand">False</property>
-                                            <property name="fill">False</property>
-                                            <property name="position">0</property>
-                                          </packing>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="position">6</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label27">
-                                    <property name="visible">True</property>
-                                    <property name="label" translatable="yes">Brightness/contrast</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="position">2</property>
-                              </packing>
-                            </child>
-                            <child>
                               <object class="GtkExpander" id="expander7">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -1842,7 +1718,7 @@ as background</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">3</property>
+                                <property name="position">2</property>
                               </packing>
                             </child>
                             <child>
@@ -1923,7 +1799,7 @@ as background</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">4</property>
+                                <property name="position">3</property>
                               </packing>
                             </child>
                             <child>
@@ -1975,7 +1851,7 @@ as background</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">5</property>
+                                <property name="position">4</property>
                               </packing>
                             </child>
                             <child>
@@ -2162,7 +2038,7 @@ as background</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">6</property>
+                                <property name="position">5</property>
                               </packing>
                             </child>
                             <child>
@@ -2362,7 +2238,7 @@ as background</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">7</property>
+                                <property name="position">6</property>
                               </packing>
                             </child>
                             <child>
@@ -2562,8 +2438,11 @@ as background</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="position">8</property>
+                                <property name="position">7</property>
                               </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
                             </child>
                           </object>
                         </child>
@@ -2766,8 +2645,8 @@ as background</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="transient_for">main_window</property>
     <property name="do_overwrite_confirmation">True</property>
-    <property name="action">save</property>
     <property name="show_hidden">True</property>
+    <property name="action">save</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox3">
         <property name="visible">True</property>
@@ -3007,8 +2886,8 @@ region of interest</property>
     <property name="transient_for">main_window</property>
     <property name="has_separator">False</property>
     <property name="do_overwrite_confirmation">True</property>
-    <property name="action">save</property>
     <property name="show_hidden">True</property>
+    <property name="action">save</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox9">
         <property name="visible">True</property>

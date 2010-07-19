@@ -106,8 +106,6 @@ typedef struct gui_objects_t{
   GtkAdjustment *Trig_framerate_adj;
   GtkAdjustment *max_meanbar;
   GtkAdjustment *min_meanbar;
-  GtkAdjustment *soft_brightness_adj;
-  GtkAdjustment *soft_contrast_adj;
   GtkAdjustment *soft_angle_adj;
   GtkAdjustment *soft_level_min_adj;
   GtkAdjustment *soft_level_max_adj;

@@ -450,13 +450,6 @@ G_MODULE_EXPORT void cb_soft_level_reset_clicked(GtkButton *button)
   update_soft_val(&camera_params);
 }
 
-G_MODULE_EXPORT void cb_soft_brightcont_reset_clicked(GtkButton *button)
-{
-  gtk_adjustment_set_value(camera_params.objects->soft_brightness_adj,0);
-  gtk_adjustment_set_value(camera_params.objects->soft_contrast_adj,0);
-  update_soft_val(&camera_params);
-}
-
 G_MODULE_EXPORT void cb_soft_editable_changed( GtkEditable *editable, gpointer   data )
 {
     update_soft_val(&camera_params);
@@ -622,8 +615,6 @@ main( int    argc,
     GA( Trig_framerate_adj);
     GA( min_meanbar );
     GA( max_meanbar );
-    GA( soft_brightness_adj );
-    GA( soft_contrast_adj );
     GA( soft_angle_adj );
     GA( soft_level_min_adj );
     GA( soft_level_max_adj );

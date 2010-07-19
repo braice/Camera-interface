@@ -170,13 +170,11 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   }
 
 
-  /********* Level and brightness/contrast ****************/
+  /********* Level ****************/
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autolevel))==FALSE)
   {
     MagickLevelImage(camera_params->wand_data.processed_magick_wand, gtk_adjustment_get_value(camera_params->objects->soft_level_min_adj), 1, gtk_adjustment_get_value(camera_params->objects->soft_level_max_adj));
 
-    if((gtk_adjustment_get_value(camera_params->objects->soft_brightness_adj)!=0)||(gtk_adjustment_get_value(camera_params->objects->soft_contrast_adj)!=0))
-      MagickBrightnessContrastImage(camera_params->wand_data.processed_magick_wand,gtk_adjustment_get_value(camera_params->objects->soft_brightness_adj),gtk_adjustment_get_value(camera_params->objects->soft_contrast_adj));
   }
 
 
@@ -413,7 +411,6 @@ void imagemagick_set_bg(camera_parameters_t* camera_params)
 void imagemagick_display_image(camera_parameters_t* camera_params)
 {
   int width,height;
-  g_print ("display\n");
   pthread_mutex_lock(&camera_params->wand_data.display_img_mutex);
   width=MagickGetImageWidth(camera_params->wand_data.display_magick_wand);
   height=MagickGetImageHeight(camera_params->wand_data.display_magick_wand);
@@ -466,6 +463,5 @@ void imagemagick_display_image(camera_parameters_t* camera_params)
 
   //We force the image to be refreshed
   gtk_widget_queue_draw(camera_params->objects->processed_image);
-  g_print ("done\n\n");
 
 }
