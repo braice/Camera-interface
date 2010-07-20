@@ -907,7 +907,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkToggleButton" id="raw_autosave">
-                                    <property name="label" translatable="yes">Automatic Saving</property>
+                                    <property name="label" translatable="yes">Automatic Saving (not yet implemented)</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
@@ -1241,7 +1241,7 @@
                             </child>
                             <child>
                               <object class="GtkToggleButton" id="processed_autosave">
-                                <property name="label" translatable="yes">Automatic Saving</property>
+                                <property name="label" translatable="yes">Automatic Saving (not yet implemented)</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
