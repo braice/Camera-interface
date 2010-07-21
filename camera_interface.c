@@ -599,6 +599,7 @@ main( int    argc,
     GW( processed_mean_roi2 );
     GW( processed_mean_roi2_bar );
     GW( soft_dont_update_current );
+    GW( soft_timing_text );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )

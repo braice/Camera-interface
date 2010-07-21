@@ -490,7 +490,7 @@ void camera_new_image(camera_parameters_t* camera_params)
 
   /********************* ImageMagick *************************/
   imagemagick_get_image(camera_params);
-  imagemagick_process_image(camera_params,1);
+  imagemagick_process_image(camera_params);
   gdk_threads_enter();
 
   imagemagick_display_image(camera_params);
@@ -601,7 +601,7 @@ void *camera_thread_func(void* arg)
 	  //If we are already processing an image we quit
 	  if(camera_params->wand_data.processed_img_ok==0)
 	    continue;
-	  imagemagick_process_image(camera_params,1);
+	  imagemagick_process_image(camera_params);
 	  gdk_threads_enter();
 	  imagemagick_display_image(camera_params);
 	  gdk_threads_leave();

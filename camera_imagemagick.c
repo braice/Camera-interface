@@ -23,6 +23,8 @@
 
 
 #include "camera.h"
+#include <sys/time.h>
+#include <unistd.h>
 
   //http://www.imagemagick.org/api/magick-wand.php
   //http://www.imagemagick.org/api/magick-wand.php#NewMagickWandFromImage
@@ -98,9 +100,70 @@ MagickBooleanType imagemagick_draw_roi(MagickWand *wand,char* color, int x, int 
 }
 
 
-void imagemagick_process_image(camera_parameters_t* camera_params, int threads_enter)
+
+MagickBooleanType imagemagick_levelimage(MagickWand *wand,int black, int white)
+{
+
+
+  Image *image;
+  PixelPacket *pixels;
+  int x,y,width, height;
+  int value;
+  int max=(1<<16)-1; //replace by quantumrange
+  
+  if(white==black)
+    white++;
+
+  double scale;
+  scale=(double)max/((double)white-(double)black);
+  //g_print("Scale %f\n",scale);
+  /*
+  int scale;
+  scale=max/(white-black);
+  g_print("Scale %d\n",scale);
+  */
+  width = MagickGetImageWidth(wand);
+  height = MagickGetImageHeight(wand);
+  image=GetImageFromMagickWand(wand);
+  pixels=GetAuthenticPixels(image,0,0,width,height, NULL);
+  for (y=0; y < height; y++)
+  for (x=0; x < width; x++)
+    {
+      if(pixels->red<black)
+	value=0;
+      else if(pixels->red>white)
+	value=max;
+      else
+	value=(pixels->red-black)*scale; 
+      
+      pixels->red=value;
+      pixels->green=value;
+      pixels->blue=value;
+      pixels++;
+    }
+
+  SyncAuthenticPixels(image,NULL);
+  return 0;
+
+}
+
+void imagemagick_process_image(camera_parameters_t* camera_params)
 {
   MagickBooleanType status;
+  struct timeval tv_before,tv_after;
+  gdouble time_bg,time_level,time_magnify,time_rot,time_cut,time_mean;
+  gchar *msg_bg;
+  gdouble fraction_roi1;
+  gdouble fraction_roi2;
+  gdouble fraction_tot;
+  fraction_roi1=-1;
+  fraction_roi2=-1;
+  fraction_tot=-1;
+
+
+  msg_bg=NULL;
+
+  time_bg=0;time_level=0;time_magnify=0;time_rot=0;time_cut=0;time_mean=0;
   //We save the old one
 
   if((camera_params->wand_data.raw_img_ok==0))
@@ -128,16 +191,9 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
       if((MagickGetImageWidth(camera_params->wand_data.background_wand)!=MagickGetImageWidth(camera_params->wand_data.processed_magick_wand))||
 	 (MagickGetImageHeight(camera_params->wand_data.background_wand)!=MagickGetImageHeight(camera_params->wand_data.processed_magick_wand)))
       {
-	gchar *msg;
-	if(threads_enter)
-	  gdk_threads_enter();
-	msg = g_strdup_printf ("!!! Incompatible sizes\nBg size: %ldx%ld",
+	msg_bg = g_strdup_printf ("!!! Incompatible sizes\nBg size: %ldx%ld",
 			       MagickGetImageWidth(camera_params->wand_data.background_wand),
 			       MagickGetImageHeight(camera_params->wand_data.background_wand));
-	gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_background_info_text)),msg,-1);
-	g_free (msg);
-	if(threads_enter)
-	  gdk_threads_leave();
 
       }
       else
@@ -146,26 +202,22 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 	//see http://www.simplesystems.org/RMagick/doc/constants.html#CompositeOperator
 	//http://www.imagemagick.org/api/magick-image.php#MagickCompositeImage
 	//MinusCompositeOp,
+	gettimeofday (&tv_before, (struct timezone *) NULL);
 	status=MagickCompositeImage(camera_params->wand_data.processed_magick_wand,
 			     camera_params->wand_data.background_wand,
 			     DifferenceCompositeOp,
 			     0,0);
 	if (status == MagickFalse)
 	  ThrowWandException(camera_params->wand_data.processed_magick_wand);
+	gettimeofday (&tv_after, (struct timezone *) NULL);
+	time_bg = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
 
       }
       pthread_mutex_unlock(&camera_params->wand_data.background_img_mutex);
     }
     else
     {
-      gchar *msg;
-      if(threads_enter)
-	gdk_threads_enter();
-      msg = g_strdup_printf ("!!! Background NOT set");
-      gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_background_info_text)),msg,-1);
-      g_free (msg);
-      if(threads_enter)
-	gdk_threads_leave();
+      msg_bg = g_strdup_printf ("!!! Background NOT set");
     }
   }
 
@@ -173,15 +225,21 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   /********* Level ****************/
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autolevel))==FALSE)
   {
-    MagickLevelImage(camera_params->wand_data.processed_magick_wand, gtk_adjustment_get_value(camera_params->objects->soft_level_min_adj), 1, gtk_adjustment_get_value(camera_params->objects->soft_level_max_adj));
-
+    gettimeofday (&tv_before, (struct timezone *) NULL);
+    //MagickLevelImage(camera_params->wand_data.processed_magick_wand, gtk_adjustment_get_value(camera_params->objects->soft_level_min_adj), 1, gtk_adjustment_get_value(camera_params->objects->soft_level_max_adj));
+    imagemagick_levelimage(camera_params->wand_data.processed_magick_wand, gtk_adjustment_get_value(camera_params->objects->soft_level_min_adj), gtk_adjustment_get_value(camera_params->objects->soft_level_max_adj));
+    gettimeofday (&tv_after, (struct timezone *) NULL);
+    time_level = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
   }
 
 
   /**************** Auto level and auto gamma ***************/
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autolevel))==TRUE)
   {
+    gettimeofday (&tv_before, (struct timezone *) NULL);
     MagickAutoLevelImage(camera_params->wand_data.processed_magick_wand);
+    gettimeofday (&tv_after, (struct timezone *) NULL);
+    time_level = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
   }
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autogamma))==TRUE)
   {
@@ -203,16 +261,20 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   {
     //see http://www.dylanbeattie.net/magick/filters/result.html
     //default filter for magnifyimage : CubicFilter
+    gettimeofday (&tv_before, (struct timezone *) NULL);
     MagickResizeImage(camera_params->wand_data.processed_magick_wand,
 		      n*MagickGetImageWidth(camera_params->wand_data.processed_magick_wand),
 		      n*MagickGetImageHeight(camera_params->wand_data.processed_magick_wand),
 		      PointFilter,0);
+    gettimeofday (&tv_after, (struct timezone *) NULL);
+    time_magnify = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
   }
 
 
   /**************** Image rotation ****************/
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_rotate_image))==TRUE)
   {
+    gettimeofday (&tv_before, (struct timezone *) NULL);
     PixelWand *black;
     black = NewPixelWand();
     PixelSetColor(black, "black");
@@ -220,12 +282,15 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
     if (status == MagickFalse)
       ThrowWandException(camera_params->wand_data.processed_magick_wand);
     DestroyPixelWand(black);
+    gettimeofday (&tv_after, (struct timezone *) NULL);
+    time_rot = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
   }
 
 
   /************* Software ROI *********************/
   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_cut_img))==TRUE)
   {
+    gettimeofday (&tv_before, (struct timezone *) NULL);
     MagickCropImage( camera_params->wand_data.processed_magick_wand,
                      gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_width),
                      gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_height),
@@ -236,6 +301,8 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 		       gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_width),
 		       gtk_adjustment_get_value(camera_params->objects->ROI_soft_adjust_height),
 		       0,0);
+    gettimeofday (&tv_after, (struct timezone *) NULL);
+    time_cut = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
   }
 
 
@@ -255,6 +322,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 
   /******************** Compute the mean over a ROI and display the ROI **********************/
   double mean_roi1,std_roi1;
+  gettimeofday (&tv_before, (struct timezone *) NULL);
  
   mean_roi1=0;
   std_roi1=0;
@@ -281,16 +349,9 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 	ThrowWandException(camera_params->wand_data.display_magick_wand);
       DestroyMagickWand(temp_wand);
       /********************** mean bar ***************************/
-      gdouble fraction;
-      fraction=(mean_roi1-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_min_adj));
-      fraction=fraction<0?0:fraction;
-      fraction=fraction>1?1:fraction;
-      if(threads_enter)
-	gdk_threads_enter();
-      gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_roi1_bar),fraction);
-      if(threads_enter)
-	gdk_threads_leave();
-
+      fraction_roi1=(mean_roi1-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi1_min_adj));
+      fraction_roi1=fraction_roi1<0?0:fraction_roi1;
+      fraction_roi1=fraction_roi1>1?1:fraction_roi1;
     }
   }
 
@@ -321,15 +382,9 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 	ThrowWandException(camera_params->wand_data.display_magick_wand);
       DestroyMagickWand(temp_wand);
       /********************** mean bar ***************************/
-      gdouble fraction;
-      fraction=(mean_roi2-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_min_adj));
-      fraction=fraction<0?0:fraction;
-      fraction=fraction>1?1:fraction;
-      if(threads_enter)
-	gdk_threads_enter();
-      gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_roi2_bar),fraction);
-      if(threads_enter)
-	gdk_threads_leave();
+      fraction_roi2=(mean_roi2-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_roi2_min_adj));
+      fraction_roi2=fraction_roi2<0?0:fraction_roi2;
+      fraction_roi2=fraction_roi2>1?1:fraction_roi2;
     }
   }
 
@@ -340,39 +395,22 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
   img_height = MagickGetImageHeight(camera_params->wand_data.processed_magick_wand);
   MagickGetImageChannelMean(camera_params->wand_data.processed_magick_wand,AllChannels,&mean,&std);
   /********************** mean bar ***************************/
-  gdouble fraction;
-  fraction=(mean-gtk_adjustment_get_value(camera_params->objects->processed_mean_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_min_adj));
-  fraction=fraction<0?0:fraction;
-  fraction=fraction>1?1:fraction;
-  if(threads_enter)
-    gdk_threads_enter();
-  gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_bar),fraction);
-  if(threads_enter)
-    gdk_threads_leave();
-  
+  fraction_tot=(mean-gtk_adjustment_get_value(camera_params->objects->processed_mean_min_adj))/(gtk_adjustment_get_value(camera_params->objects->processed_mean_max_adj)-gtk_adjustment_get_value(camera_params->objects->processed_mean_min_adj));
+  fraction_tot=fraction_tot<0?0:fraction_tot;
+  fraction_tot=fraction_tot>1?1:fraction_tot;
+  gettimeofday (&tv_after, (struct timezone *) NULL);
+  time_mean = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
+
 
   //We unlock the mutex
   pthread_mutex_unlock(&camera_params->wand_data.display_img_mutex);
   pthread_mutex_unlock(&camera_params->wand_data.processed_img_mutex);
 
 
-  /******************** Fill the treeview     **********************/
-  if(camera_params->list_store_iter_ok)
-  {
-    if(threads_enter)
-      gdk_threads_enter();
-    gtk_list_store_set(camera_params->objects->statistics_list, &camera_params->list_iter,
-		       3,(gdouble) mean,
-		       4,(gdouble) mean_roi1,
-		       5,(gdouble) mean_roi2,
-		       -1);
-    if(threads_enter)
-      gdk_threads_leave();
-  }
 
   /******************** Display image data   **********************/
 
-  gchar *msg;
+  gchar *msg,*msg2;
   
   msg = g_strdup_printf ("Size: %ldx%ld\tMean %.3lf\tStd: %.3lf\nMean1 %.3lf\tStd1: %.3lf\tMean2 %.3lf\tStd2: %.3lf",
 			 img_width,
@@ -380,12 +418,37 @@ void imagemagick_process_image(camera_parameters_t* camera_params, int threads_e
 			 mean, std,
 			 mean_roi1, std_roi1,
 			 mean_roi2, std_roi2);
-  if(threads_enter)
-    gdk_threads_enter();
+
+  msg2 = g_strdup_printf ("Timings (ms):\nBackground\n   %.0f\nLevelling\n   %.0f\nMagnify\n   %.0f\nRotation\n   %.0f\nCut\n   %.0f\nMean\n   %.0f\n",
+			  time_bg/1000,time_level/1000,time_magnify/1000,time_rot/1000,time_cut/1000,time_mean/1000);
+  gdk_threads_enter();
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_image_text)),msg,-1);
-  if(threads_enter)
-    gdk_threads_leave();
+  gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_timing_text)),msg2,-1);
+  if(msg_bg)
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_background_info_text)),msg,-1);
+ 
+  if(fraction_roi1>=0)
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_roi1_bar),fraction_roi1);
+  if(fraction_roi2>=0)
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_roi2_bar),fraction_roi2);
+  if(fraction_tot>=0)
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_bar),fraction_tot);
+
+  /******************** Fill the treeview     **********************/
+  if(camera_params->list_store_iter_ok)
+    gtk_list_store_set(camera_params->objects->statistics_list, &camera_params->list_iter,
+		       3,(gdouble) mean,
+		       4,(gdouble) mean_roi1,
+		       5,(gdouble) mean_roi2,
+		       -1);
+
+  gdk_threads_leave();
   g_free (msg);
+  g_free (msg2);
+  if(msg_bg)  
+    g_free (msg_bg);
+
+
   
 }
 

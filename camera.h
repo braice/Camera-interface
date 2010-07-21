@@ -93,6 +93,7 @@ typedef struct gui_objects_t{
   GtkWidget *processed_mean_roi2;
   GtkWidget *processed_mean_roi2_bar;
   GtkWidget *soft_dont_update_current;
+  GtkWidget *soft_timing_text;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -222,7 +223,7 @@ void camera_reset_roi(camera_parameters_t* camera_params);
 void add_to_statusbar(camera_parameters_t *camera_params, int enter_threads, const char *psz_format, ...);
 
 void imagemagick_get_image(camera_parameters_t* camera_params);
-void imagemagick_process_image(camera_parameters_t* camera_params, int threads_enter);
+void imagemagick_process_image(camera_parameters_t* camera_params);
 void imagemagick_display_image(camera_parameters_t* camera_params);
 void update_soft_val(camera_parameters_t* camera_params);
 void imagemagick_set_bg(camera_parameters_t* camera_params);
