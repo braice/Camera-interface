@@ -220,6 +220,7 @@ G_MODULE_EXPORT void cb_Binning_changed( GtkEditable *editable, gpointer   data 
   camera_params.binning_y=(int)gtk_adjustment_get_value(camera_params.objects->Bin_Y_adj);
   PvAttrUint32Set(camera_params.camera_handler,"BinningX",camera_params.binning_x);
   PvAttrUint32Set(camera_params.camera_handler,"BinningY",camera_params.binning_y);
+  camera_update_roi(&camera_params);
 }
 
 //Callback for the bytespersecond values changed
