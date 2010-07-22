@@ -94,6 +94,12 @@ typedef struct gui_objects_t{
   GtkWidget *processed_mean_roi2_bar;
   GtkWidget *soft_dont_update_current;
   GtkWidget *soft_timing_text;
+  GtkWidget *ROI_height;
+  GtkWidget *ROI_width;
+  GtkWidget *ROI_start_x;
+  GtkWidget *ROI_start_y;
+  GtkWidget *Exp_gain;
+  GtkWidget *Exp_time;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;

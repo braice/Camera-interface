@@ -103,6 +103,11 @@ G_MODULE_EXPORT void cb_destroy( GtkWidget *widget,
 //Callback for the ROI values changed
 G_MODULE_EXPORT void cb_ROI_changed( GtkEditable *editable, gpointer   data )
 {
+  //we force the update of the spin button
+  gtk_spin_button_update (GTK_SPIN_BUTTON(camera_params.objects->ROI_height));
+  gtk_spin_button_update (GTK_SPIN_BUTTON(camera_params.objects->ROI_width));
+  gtk_spin_button_update (GTK_SPIN_BUTTON(camera_params.objects->ROI_start_x));
+  gtk_spin_button_update (GTK_SPIN_BUTTON(camera_params.objects->ROI_start_y));
   if(camera_params.roi_hard_active)
     camera_update_roi(&camera_params);
 }
@@ -224,8 +229,10 @@ G_MODULE_EXPORT void cb_Binning_changed( GtkEditable *editable, gpointer   data 
 }
 
 //Callback for the bytespersecond values changed
-G_MODULE_EXPORT void cb_Eposure_changed( GtkEditable *editable, gpointer   data )
-{
+G_MODULE_EXPORT void cb_Exposure_changed( GtkEditable *editable, gpointer   data )
+{ 
+  gtk_spin_button_update (GTK_SPIN_BUTTON(camera_params.objects->Exp_time));
+  gtk_spin_button_update (GTK_SPIN_BUTTON(camera_params.objects->Exp_gain));
   camera_set_exposure(&camera_params);
 }
 
@@ -601,6 +608,12 @@ main( int    argc,
     GW( processed_mean_roi2_bar );
     GW( soft_dont_update_current );
     GW( soft_timing_text );
+    GW( ROI_height );
+    GW( ROI_width );
+    GW( ROI_start_x );
+    GW( ROI_start_y );
+    GW( Exp_gain );
+    GW( Exp_time );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
