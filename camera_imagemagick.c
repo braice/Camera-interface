@@ -41,7 +41,7 @@
   // g_print( "ConstitureImage failed\n");
   //}
 
-
+MagickBooleanType imagemagick_levelimage(MagickWand *wand,int black, int white);
 
 void update_soft_val(camera_parameters_t* camera_params)
 {
@@ -66,6 +66,42 @@ void imagemagick_get_image(camera_parameters_t* camera_params)
   else
   {
     camera_params->wand_data.raw_img_ok=1;
+    /********************* Image autosaving ***************/
+    gchar *msg;
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->raw_autosave))==TRUE)
+    {
+      if(camera_params->wand_data.raw_directory)
+      {
+	MagickWand *tempwand;
+	tempwand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
+	//we scale the image on 16 bits before saving
+	imagemagick_levelimage(tempwand, 0, 1<<((int)camera_params->sensorbits));
+	gchar *filename;
+	struct timeval tv;
+	gettimeofday(&tv, (struct timezone *) NULL);
+	filename=g_strdup_printf("%s/image%ld.png",camera_params->wand_data.raw_directory,tv.tv_sec);
+	
+	status=MagickSetImageFormat(tempwand,"PNG");
+	if (status == MagickFalse)
+	  ThrowWandException(tempwand);
+	status=MagickWriteImage(tempwand,filename);    
+	if (status == MagickFalse)
+	  ThrowWandException(tempwand);
+	DestroyMagickWand(tempwand);
+	msg=g_strdup_printf("Image saved to %s",filename);
+	g_free (filename);
+      }
+      else
+      {
+	msg=g_strdup_printf("Directory not choosen");
+      }
+    }
+    else
+      msg=g_strdup_printf("No autosaving");
+    gdk_threads_enter();
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->raw_text)),msg,-1);
+    gdk_threads_leave();
+    g_free(msg);
   }
   //We unlock the mutex
   pthread_mutex_unlock(&camera_params->wand_data.raw_img_mutex);

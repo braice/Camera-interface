@@ -331,7 +331,7 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkSpinButton" id="Exp_Gain">
+                                      <object class="GtkSpinButton" id="Exp_gain">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">&#x25CF;</property>
@@ -908,7 +908,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkToggleButton" id="raw_autosave">
-                                    <property name="label" translatable="yes">Automatic Saving (not yet implemented)</property>
+                                    <property name="label" translatable="yes">Automatic Saving</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
@@ -921,6 +921,7 @@
                                 </child>
                               </object>
                               <packing>
+                                <property name="expand">False</property>
                                 <property name="fill">False</property>
                                 <property name="position">2</property>
                               </packing>
@@ -936,7 +937,19 @@
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
+                              <object class="GtkTextView" id="raw_text">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="pixels_above_lines">10</property>
+                                <property name="pixels_below_lines">10</property>
+                                <property name="editable">False</property>
+                                <property name="left_margin">10</property>
+                                <property name="right_margin">10</property>
+                                <property name="cursor_visible">False</property>
+                              </object>
+                              <packing>
+                                <property name="position">4</property>
+                              </packing>
                             </child>
                           </object>
                           <packing>

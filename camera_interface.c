@@ -293,7 +293,6 @@ G_MODULE_EXPORT void cb_save_clicked(GtkButton *button)
 
     //we scale the image on 16 bits before saving
     imagemagick_levelimage(camera_params.wand_data.saving_wand, 0, 1<<((int)camera_params.sensorbits));
-    MagickLevelImage(camera_params.wand_data.saving_wand, 0, 1, 1<<((int)camera_params.sensorbits));
 	
   }
   if(camera_params.wand_data.saving_wand)
@@ -613,6 +612,8 @@ main( int    argc,
     GW( ROI_start_y );
     GW( Exp_gain );
     GW( Exp_time );
+    GW( raw_autosave );
+    GW( raw_text );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )

@@ -86,6 +86,7 @@ typedef struct gui_objects_t{
   GtkWidget *soft_background_info_text;
   GtkWidget *soft_background_button;
   GtkWidget *raw_autosave;
+  GtkWidget *raw_text;
   GtkWidget *processed_autosave;
   GtkWidget *processed_mean_bar;
   GtkWidget *processed_mean_roi1;
