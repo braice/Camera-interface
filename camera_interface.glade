@@ -732,11 +732,12 @@
                     <property name="spacing">2</property>
                     <property name="homogeneous">True</property>
                     <child>
-                      <object class="GtkToggleButton" id="acq_toggle">
-                        <property name="label" translatable="yes">Acquire images</property>
+                      <object class="GtkCheckButton" id="acq_toggle">
+                        <property name="label" translatable="yes">Acquire Images</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="draw_indicator">True</property>
                         <signal name="toggled" handler="cb_Acquire_toggled"/>
                       </object>
                       <packing>
@@ -907,11 +908,12 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkToggleButton" id="raw_autosave">
+                                  <object class="GtkCheckButton" id="raw_autosave">
                                     <property name="label" translatable="yes">Automatic Saving</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
+                                    <property name="receives_default">False</property>
+                                    <property name="draw_indicator">True</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>

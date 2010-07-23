@@ -79,9 +79,15 @@ void imagemagick_get_image(camera_parameters_t* camera_params)
 	gchar *filename;
 	struct timeval tv;
 	gettimeofday(&tv, (struct timezone *) NULL);
-	filename=g_strdup_printf("%s/image%ld.png",camera_params->wand_data.raw_directory,tv.tv_sec);
+	filename=g_strdup_printf("%s/image%ld.%.0f.png",camera_params->wand_data.raw_directory,tv.tv_sec,((double)tv.tv_usec)/10000);
 	
 	status=MagickSetImageFormat(tempwand,"PNG");
+	if (status == MagickFalse)
+	  ThrowWandException(tempwand);
+	status=MagickSetImageCompression(tempwand,NoCompression);
+	if (status == MagickFalse)
+	  ThrowWandException(tempwand);
+	status=MagickSetImageCompressionQuality(tempwand,0);
 	if (status == MagickFalse)
 	  ThrowWandException(tempwand);
 	status=MagickWriteImage(tempwand,filename);    
