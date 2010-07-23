@@ -131,8 +131,6 @@ G_MODULE_EXPORT void cb_ROI_reset_clicked(GtkButton *button)
   camera_update_roi(&camera_params);
 }
 
-
-
 G_MODULE_EXPORT void cb_select_ROI_clicked(GtkButton *button)
 {
   //message if we are already using a ROI
@@ -294,6 +292,7 @@ G_MODULE_EXPORT void cb_save_clicked(GtkButton *button)
     pthread_mutex_unlock(&camera_params.wand_data.raw_img_mutex);
 
     //we scale the image on 16 bits before saving
+    imagemagick_levelimage(camera_params.wand_data.saving_wand, 0, 1<<((int)camera_params.sensorbits));
     MagickLevelImage(camera_params.wand_data.saving_wand, 0, 1, 1<<((int)camera_params.sensorbits));
 	
   }
