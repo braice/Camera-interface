@@ -483,7 +483,18 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
 		       4,(gdouble) mean_roi1,
 		       5,(gdouble) mean_roi2,
 		       -1);
-
+  //if we asked for autoscrolling the chart, we do it
+  if(camera_params->autoscroll_chart)
+  {
+    /* With NULL as iter, we get the number of toplevel nodes. */
+    gint rows = gtk_tree_model_iter_n_children(GTK_TREE_MODEL(camera_params->objects->statistics_list), NULL);
+    GtkTreePath *path;
+    /* Now get a path from the index. */
+    path = gtk_tree_path_new_from_indices(rows - 1, -1);
+    gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW (camera_params->objects->stats_treeview), path, NULL, TRUE, 0.0, 0.0); 
+    /* Drop the path, we're done with it. */
+    gtk_tree_path_free(path);
+  }
   gdk_threads_leave();
   g_free (msg);
   g_free (msg2);
