@@ -81,7 +81,10 @@ G_MODULE_EXPORT gboolean cb_delete_event( GtkWidget *widget,
    * type dialogs. */
 
   g_print ("delete event occurred\n");
-   
+  //We kill the camera thread
+  camera_params.camera_thread_shutdown=1;
+  pthread_join(camera_params.camera_thread, NULL);
+
 
   /* Change TRUE to FALSE and the main window will be destroyed with
    * a "delete-event". */
@@ -695,10 +698,6 @@ main( int    argc,
  
     /* Start main loop */
     gtk_main();
-
-    //We kill the camera thread
-    camera_params.camera_thread_shutdown=1;
-    pthread_join(camera_params.camera_thread, NULL);
 
     /* Release gtk's global lock */
     gdk_threads_leave();

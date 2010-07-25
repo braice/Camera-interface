@@ -235,16 +235,22 @@ void camera_stop_grabbing(camera_parameters_t* camera_params)
 {
   int ret;
   g_print("camera_stop_grabbing\n");
-  ret=PvCommandRun(camera_params->camera_handler,"AcquisitionStop");
+  ret=PvCommandRun(camera_params->camera_handler,"AcquisitionStop\n");
   if(ret)
-    add_to_statusbar(camera_params, 0, "Error while stopping the acquisition %s",PvAPIerror_to_str(ret));
+    {
+      g_print("Error while stopping the acquisition %s",PvAPIerror_to_str(ret));
+      add_to_statusbar(camera_params, 0, "Error while stopping the acquisition %s",PvAPIerror_to_str(ret));
+    }
   PvCaptureEnd(camera_params->camera_handler);
   PvCaptureQueueClear(camera_params->camera_handler);
   //We free the image buffer
   free(camera_params->camera_frame.ImageBuffer);
   camera_params->grabbing_images=0;
   if(!ret)
-    add_to_statusbar(camera_params, 0, "Acquisition Stopped");
+    {
+      g_print("Acquisition Stopped\n");
+      add_to_statusbar(camera_params, 0, "Acquisition Stopped");
+    }
 }
 
 void camera_set_triggering(camera_parameters_t* camera_params)
