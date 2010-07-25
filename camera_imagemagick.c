@@ -41,7 +41,6 @@
   // g_print( "ConstitureImage failed\n");
   //}
 
-MagickBooleanType imagemagick_levelimage(MagickWand *wand,int black, int white);
 
 void update_soft_val(camera_parameters_t* camera_params)
 {
@@ -193,7 +192,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
 {
   MagickBooleanType status;
   struct timeval tv_before,tv_after;
-  gdouble time_bg,time_level,time_magnify,time_rot,time_cut,time_mean;
+  gdouble time_bg,time_level,time_magnify,time_rot,time_cut,time_mean,time_list;
   gchar *msg_bg;
   gdouble fraction_roi1;
   gdouble fraction_roi2;
@@ -205,7 +204,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
 
   msg_bg=NULL;
 
-  time_bg=0;time_level=0;time_magnify=0;time_rot=0;time_cut=0;time_mean=0;
+  time_bg=0;time_level=0;time_magnify=0;time_rot=0;time_cut=0;time_mean=0;time_list=0;
   //We save the old one
 
   if((camera_params->wand_data.raw_img_ok==0))
@@ -449,6 +448,32 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
   pthread_mutex_unlock(&camera_params->wand_data.processed_img_mutex);
 
 
+  /******************** Fill the treeview     **********************/
+  gettimeofday (&tv_before, (struct timezone *) NULL);
+  gtk_list_store_insert_with_values(camera_params->objects->statistics_list, NULL,
+				    camera_params->list_store_rows,
+				    0, (gint)camera_params->image_number,
+				    1, camera_params->image_time,
+				    2, (gdouble)camera_params->raw_image_mean,
+				    3,(gdouble) mean,
+				    4,(gdouble) mean_roi1,
+				    5,(gdouble) mean_roi2,
+				    -1);
+  camera_params->list_store_rows++;
+
+  //if we asked for autoscrolling the chart, we do it
+  if(camera_params->autoscroll_chart)
+  {
+    /* With NULL as iter, we get the number of toplevel nodes. */
+    GtkTreePath *path;
+    /* Now get a path from the index. */
+    path = gtk_tree_path_new_from_indices(camera_params->list_store_rows - 1, -1);
+    gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW (camera_params->objects->stats_treeview), path, NULL, TRUE, 0.0, 0.0); 
+    /* Drop the path, we're done with it. */
+    gtk_tree_path_free(path);
+  }
+  gettimeofday (&tv_after, (struct timezone *) NULL);
+  time_list = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
 
   /******************** Display image data   **********************/
 
@@ -461,8 +486,8 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
 			 mean_roi1, std_roi1,
 			 mean_roi2, std_roi2);
 
-  msg2 = g_strdup_printf ("Timings (ms):\nBackground\n   %.0f\nLevelling\n   %.0f\nMagnify\n   %.0f\nRotation\n   %.0f\nCut\n   %.0f\nMean\n   %.0f\n",
-			  time_bg/1000,time_level/1000,time_magnify/1000,time_rot/1000,time_cut/1000,time_mean/1000);
+  msg2 = g_strdup_printf ("Timings (ms):\nBackground\n   %.0f\nLevelling\n   %.0f\nMagnify\n   %.0f\nRotation\n   %.0f\nCut\n   %.0f\nMean\n   %.0f\nList\n   %.0f\n",
+			  time_bg/1000,time_level/1000,time_magnify/1000,time_rot/1000,time_cut/1000,time_mean/1000,time_list/1000);
   gdk_threads_enter();
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_image_text)),msg,-1);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_timing_text)),msg2,-1);
@@ -476,25 +501,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
   if(fraction_tot>=0)
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->processed_mean_bar),fraction_tot);
 
-  /******************** Fill the treeview     **********************/
-  if(camera_params->list_store_iter_ok)
-    gtk_list_store_set(camera_params->objects->statistics_list, &camera_params->list_iter,
-		       3,(gdouble) mean,
-		       4,(gdouble) mean_roi1,
-		       5,(gdouble) mean_roi2,
-		       -1);
-  //if we asked for autoscrolling the chart, we do it
-  if(camera_params->autoscroll_chart)
-  {
-    /* With NULL as iter, we get the number of toplevel nodes. */
-    gint rows = gtk_tree_model_iter_n_children(GTK_TREE_MODEL(camera_params->objects->statistics_list), NULL);
-    GtkTreePath *path;
-    /* Now get a path from the index. */
-    path = gtk_tree_path_new_from_indices(rows - 1, -1);
-    gtk_tree_view_scroll_to_cell(GTK_TREE_VIEW (camera_params->objects->stats_treeview), path, NULL, TRUE, 0.0, 0.0); 
-    /* Drop the path, we're done with it. */
-    gtk_tree_path_free(path);
-  }
+
   gdk_threads_leave();
   g_free (msg);
   g_free (msg2);

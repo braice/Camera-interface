@@ -381,6 +381,10 @@ void camera_new_image(camera_parameters_t* camera_params)
   width=camera_params->camera_frame.Width;
   height=camera_params->camera_frame.Height;
 
+  struct timeval tv;
+  gettimeofday (&tv, (struct timezone *) NULL);
+  camera_params->image_time = tv.tv_sec-start_time+tv.tv_usec/1000000;
+
   gdk_threads_enter();
     
   camera_params->image_number++;
@@ -422,8 +426,7 @@ void camera_new_image(camera_parameters_t* camera_params)
   //convert black and white into RGB
   char pixel;
   int row, col, pos, rowstride;
-  long double mean;
-  mean=0;
+  camera_params->raw_image_mean=0;
   rowstride=gdk_pixbuf_get_rowstride(camera_params->raw_image_pixbuff);
   //Todo binning tests
   for(row=0;row<height;row++)
@@ -432,7 +435,7 @@ void camera_new_image(camera_parameters_t* camera_params)
     {
       pos=row*width+col;
       //RED
-      mean+=((((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)+1]<<8)+((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)]);
+      camera_params->raw_image_mean+=((((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)+1]<<8)+((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)]);
       pixel=(((((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)+1])<<4)&0xF0) +(((((guchar *)camera_params->camera_frame.ImageBuffer)[2*(pos)])>>4)&0x0F);
       pixels[0+3*(col)+row*rowstride]=pixel;
       //GREEN
@@ -447,30 +450,16 @@ void camera_new_image(camera_parameters_t* camera_params)
   camera_params->roi_hard_Y_lastimage=camera_params->camera_frame.RegionY;
   
   /******************* Filling the text buffer and chart ********************/
-  mean/=(height*width);
-  msg = g_strdup_printf ("Size: %dx%d \tMean %.3Lf\tNumber: %ld", width, height, mean, camera_params->image_number);
+  camera_params->raw_image_mean/=(height*width);
+  msg = g_strdup_printf ("Size: %dx%d \tMean %.3Lf\tNumber: %ld", width, height, camera_params->raw_image_mean, camera_params->image_number);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->image_number)),msg,-1);
   g_free (msg);
   //We add the new value to the array
-  struct timeval tv;
-  gdouble time, time_usec;
-  gettimeofday (&tv, (struct timezone *) NULL);
-  time_usec=tv.tv_usec;
-  time_usec/=1000000;
-  time = tv.tv_sec-start_time+time_usec;
   
-  gtk_list_store_append (camera_params->objects->statistics_list, &camera_params->list_iter);
-  gtk_list_store_set (camera_params->objects->statistics_list, &camera_params->list_iter,
-		      0, (gint)camera_params->image_number,
-		      1, time,
-		      2, (gdouble)mean,
-		      -1);
-  camera_params->list_store_iter_ok=1;
-
 
   /********************** mean bar ***************************/
   gdouble fraction;
-  fraction=(mean-gtk_adjustment_get_value(camera_params->objects->min_meanbar))/(gtk_adjustment_get_value(camera_params->objects->max_meanbar)-gtk_adjustment_get_value(camera_params->objects->min_meanbar));
+  fraction=(camera_params->raw_image_mean-gtk_adjustment_get_value(camera_params->objects->min_meanbar))/(gtk_adjustment_get_value(camera_params->objects->max_meanbar)-gtk_adjustment_get_value(camera_params->objects->min_meanbar));
   fraction=fraction<0?0:fraction;
   fraction=fraction>1?1:fraction;
   gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(camera_params->objects->mean_bar),fraction);

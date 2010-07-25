@@ -178,6 +178,8 @@ typedef struct camera_parameters_t{
   int camera_connected;
   //The image number
   long int image_number;
+  double image_time;
+  long double raw_image_mean;
   //Are we grabbing images ?
   int grab_images;
   int grabbing_images;
@@ -195,9 +197,8 @@ typedef struct camera_parameters_t{
   int binning_y;
   //Do we autoscroll the chart
   int autoscroll_chart;
-  //Is the iterator for the chart ok ?
-  int list_store_iter_ok;
-  GtkTreeIter list_iter;
+  //The last row number
+  int list_store_rows;
   //Background
   int background_set;
   //The magick wand/imagemagick information
@@ -234,5 +235,6 @@ void imagemagick_process_image(camera_parameters_t* camera_params);
 void imagemagick_display_image(camera_parameters_t* camera_params);
 void update_soft_val(camera_parameters_t* camera_params);
 void imagemagick_set_bg(camera_parameters_t* camera_params);
+MagickBooleanType imagemagick_levelimage(MagickWand *wand,int black, int white);
 
 #endif

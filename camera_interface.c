@@ -42,8 +42,8 @@ camera_parameters_t camera_params={
   .roi_hard_X_lastimage = 0,
   .roi_hard_Y_lastimage = 0,
   .autoscroll_chart = 0,
-  .list_store_iter_ok = 0,
   .background_set = 0,
+  .list_store_rows=0,
 };
 
 // MAIN IS AT THE END
@@ -383,7 +383,7 @@ G_MODULE_EXPORT void cb_directory_chooser_open_clicked(GtkButton *button)
 G_MODULE_EXPORT void cb_list_reset_clicked(GtkButton *button)
 {
   gtk_list_store_clear ( camera_params.objects->statistics_list );
-  camera_params.list_store_iter_ok=0;
+  camera_params.list_store_rows=0;
 }
 
 
@@ -405,7 +405,6 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
   char *filename;
   FILE *file;
   filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (camera_params.objects->listsavedialog));
-  g_print("Filename %s\n",filename);
   GtkTreeIter iter;
   //Check if the list is empty
   if(gtk_tree_model_get_iter_first (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter)==TRUE)
@@ -438,6 +437,7 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
       row++;
     }while(TRUE==gtk_tree_model_iter_next (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter));
     fclose (file);
+    add_to_statusbar(&camera_params, 0, "List saved to %s", filename);
   }
   else
   {
