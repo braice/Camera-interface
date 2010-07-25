@@ -453,18 +453,20 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
   gtk_list_store_insert_with_values(camera_params->objects->statistics_list, NULL,
 				    camera_params->list_store_rows,
 				    0, (gint)camera_params->image_number,
-				    1, camera_params->image_time,
-				    2, (gdouble) camera_params->raw_image_mean,
-				    3, (gdouble) mean,
-				    4, (gdouble) mean_roi1,
-				    5, (gdouble) mean_roi2,
+				    1, (gint)camera_params->image_acq_number,
+				    2, camera_params->image_time,
+				    3, (gdouble) camera_params->raw_image_mean,
+				    4, (gdouble) mean,
+				    5, (gdouble) mean_roi1,
+				    6, (gdouble) mean_roi2,
 				    -1);
   camera_params->list_store_rows++;
 
   if (camera_params->list_file != NULL)
     {
-      fprintf(camera_params->list_file,"%d\t%f\t%f\t%f\t%f\t%f\n",
+      fprintf(camera_params->list_file,"%d\t%d\t%f\t%f\t%f\t%f\t%f\n",
 	      (gint)camera_params->image_number,
+	      (gint)camera_params->image_acq_number,
 	      camera_params->image_time,
 	      (gdouble)camera_params->raw_image_mean,
 	      (gdouble)mean,
@@ -534,7 +536,7 @@ void imagemagick_set_bg(camera_parameters_t* camera_params)
   camera_params->wand_data.background_wand=CloneMagickWand(camera_params->wand_data.raw_magick_wand);
   camera_params->background_set=1;
   gchar *msg;
-  msg = g_strdup_printf ("Bg set, Size: %ldx%ld\nimage %d",
+  msg = g_strdup_printf ("Bg set, Size: %ldx%ld\nimage %ld",
 			 MagickGetImageWidth(camera_params->wand_data.background_wand),
 			 MagickGetImageHeight(camera_params->wand_data.background_wand),
 			 camera_params->image_number);

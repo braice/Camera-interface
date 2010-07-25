@@ -32,6 +32,7 @@
 
 camera_parameters_t camera_params={
   .image_number = 0,
+  .image_acq_number = 0,
   .camera_thread_shutdown = 0,
   .camera_connected = 0,
   .grab_images = 0,
@@ -415,6 +416,7 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
     //we get the data from the list
     gdouble time,mean, mean_soft, mean_soft_roi1, mean_soft_roi2;
     gint image_number;
+    gint image_acq_number;
     file = fopen (filename, "w");
     if (file == NULL)
     {
@@ -424,17 +426,18 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
       return;
     }
 
-    fprintf(file,"#Start_time=%ld\n#image_number\ttime\tmean\tmean_soft\tmean_soft_roi1\tmean_soft_roi2\n", camera_params.start_time);
+    fprintf(file,"#Start_time=%ld\n#image_number\timage_acq_number\ttime\tmean\tmean_soft\tmean_soft_roi1\tmean_soft_roi2\n", camera_params.start_time);
     do{
       gtk_tree_model_get (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter,
 			  0, &image_number,
-			  1, &time,
-			  2, &mean,
-			  3, &mean_soft,
-			  4, &mean_soft_roi1,
-			  5, &mean_soft_roi2,
+			  1, &image_acq_number,
+			  2, &time,
+			  3, &mean,
+			  4, &mean_soft,
+			  5, &mean_soft_roi1,
+			  6, &mean_soft_roi2,
 			  -1);
-      fprintf(file,"%d\t%f\t%f\t%f\t%f\t%f\n",image_number, time, mean, mean_soft, mean_soft_roi1, mean_soft_roi2);
+      fprintf(file,"%d\t%d\t%f\t%f\t%f\t%f\t%f\n",image_number, image_acq_number, time, mean, mean_soft, mean_soft_roi1, mean_soft_roi2);
     }while(TRUE==gtk_tree_model_iter_next (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter));
     fclose (file);
     add_to_statusbar(&camera_params, 0, "List saved to %s", filename);
@@ -539,7 +542,7 @@ main( int    argc,
       g_print("cannot open %s\n",LIST_FILENAME);
     else
       {
-	fprintf(camera_params.list_file,"#image_number\ttime\tmean\tmean_soft\tmean_soft_roi1\tmean_soft_roi2\n");
+	fprintf(camera_params.list_file,"#image_number\timage_acq_number\ttime\tmean\tmean_soft\tmean_soft_roi1\tmean_soft_roi2\n");
 	g_print("The list will be continuously saved in %s\n",LIST_FILENAME);
       }
 

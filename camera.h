@@ -183,6 +183,7 @@ typedef struct camera_parameters_t{
   int camera_connected;
   //The image number
   long int image_number;
+  long int image_acq_number;
   double image_time;
   long double raw_image_mean;
   //Are we grabbing images ?

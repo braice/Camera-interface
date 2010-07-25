@@ -97,7 +97,7 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
 {
   int ret;
   gchar *msg; 
-  g_print("Camera inint\n");
+  g_print("Camera init\n");
   ret=PvCameraOpen(UniqueId,ePvAccessMaster,&camera_params->camera_handler);
   if(ret!=ePvErrSuccess)
   {
@@ -235,10 +235,10 @@ void camera_stop_grabbing(camera_parameters_t* camera_params)
 {
   int ret;
   g_print("camera_stop_grabbing\n");
-  ret=PvCommandRun(camera_params->camera_handler,"AcquisitionStop\n");
+  ret=PvCommandRun(camera_params->camera_handler,"AcquisitionStop");
   if(ret)
     {
-      g_print("Error while stopping the acquisition %s",PvAPIerror_to_str(ret));
+      g_print("Error while stopping the acquisition %s\n",PvAPIerror_to_str(ret));
       add_to_statusbar(camera_params, 0, "Error while stopping the acquisition %s",PvAPIerror_to_str(ret));
     }
   PvCaptureEnd(camera_params->camera_handler);
@@ -251,6 +251,7 @@ void camera_stop_grabbing(camera_parameters_t* camera_params)
       g_print("Acquisition Stopped\n");
       add_to_statusbar(camera_params, 0, "Acquisition Stopped");
     }
+  camera_params->image_acq_number=0;
 }
 
 void camera_set_triggering(camera_parameters_t* camera_params)
@@ -393,6 +394,7 @@ void camera_new_image(camera_parameters_t* camera_params)
   gdk_threads_enter();
     
   camera_params->image_number++;
+  camera_params->image_acq_number++;
 
 
 
@@ -456,7 +458,7 @@ void camera_new_image(camera_parameters_t* camera_params)
   
   /******************* Filling the text buffer and chart ********************/
   camera_params->raw_image_mean/=(height*width);
-  msg = g_strdup_printf ("Size: %dx%d \tMean %.3Lf\tNumber: %ld", width, height, camera_params->raw_image_mean, camera_params->image_number);
+  msg = g_strdup_printf ("Size: %dx%d \tMean %.3Lf\tNumber: %ld\tNumber for current Acquisiton: %ld", width, height, camera_params->raw_image_mean, camera_params->image_number, camera_params->image_acq_number);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->image_number)),msg,-1);
   g_free (msg);
   //We add the new value to the array
