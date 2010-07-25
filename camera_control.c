@@ -34,7 +34,6 @@
 void camera_reset_roi(camera_parameters_t* camera_params);
 void camera_new_image(camera_parameters_t* camera_params);
 
-long start_time;
 
 
 char *PvAPIerror_to_str(tPvErr error)
@@ -383,7 +382,7 @@ void camera_new_image(camera_parameters_t* camera_params)
 
   struct timeval tv;
   gettimeofday (&tv, (struct timezone *) NULL);
-  camera_params->image_time = tv.tv_sec-start_time+tv.tv_usec/1000000;
+  camera_params->image_time = tv.tv_sec-camera_params->start_time+((double)tv.tv_usec)/1000000;
 
   gdk_threads_enter();
     
@@ -501,7 +500,7 @@ void *camera_thread_func(void* arg)
   int ret;
   //We record the starting time
   gettimeofday (&tv, (struct timezone *) NULL);
-  start_time = tv.tv_sec;
+  camera_params->start_time = tv.tv_sec;
   
   g_print("Camera thread started\n");
   if((ret=PvInitialize()))
@@ -605,7 +604,7 @@ void *camera_thread_func(void* arg)
   PvUnInitialize();
   gettimeofday (&tv, (struct timezone *) NULL);
 
-  g_print("Camera thread stopped after %ld seconds\n", tv.tv_sec-start_time);
+  g_print("Camera thread stopped after %ld seconds\n", tv.tv_sec-camera_params->start_time);
 
   return NULL;
 }

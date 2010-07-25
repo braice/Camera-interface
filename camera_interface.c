@@ -413,7 +413,6 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
     //we get the data from the list
     gdouble time,mean, mean_soft, mean_soft_roi1, mean_soft_roi2;
     gint image_number;
-    int row=0;
     file = fopen (filename, "w");
     if (file == NULL)
     {
@@ -423,7 +422,7 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
       return;
     }
 
-    fprintf(file,"#image_number\ttime\tmean\tmean_soft\tmean_soft_roi1\tmean_soft_roi2\n");
+    fprintf(file,"#Start_time=%ld\n#image_number\ttime\tmean\tmean_soft\tmean_soft_roi1\tmean_soft_roi2\n", camera_params.start_time);
     do{
       gtk_tree_model_get (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter,
 			  0, &image_number,
@@ -434,7 +433,6 @@ G_MODULE_EXPORT void cb_list_save_ok_clicked(GtkButton *button)
 			  5, &mean_soft_roi2,
 			  -1);
       fprintf(file,"%d\t%f\t%f\t%f\t%f\t%f\n",image_number, time, mean, mean_soft, mean_soft_roi1, mean_soft_roi2);
-      row++;
     }while(TRUE==gtk_tree_model_iter_next (GTK_TREE_MODEL(camera_params.objects->statistics_list),&iter));
     fclose (file);
     add_to_statusbar(&camera_params, 0, "List saved to %s", filename);
@@ -534,6 +532,15 @@ main( int    argc,
     pthread_mutex_init(&camera_params.wand_data.raw_img_mutex, NULL);
     pthread_mutex_init(&camera_params.wand_data.display_img_mutex, NULL);
     pthread_mutex_init(&camera_params.wand_data.background_img_mutex, NULL);
+    camera_params.list_file = fopen (LIST_FILENAME, "w");
+    if (camera_params.list_file == NULL)
+      g_print("cannot open %s\n",LIST_FILENAME);
+    else
+      {
+	fprintf(camera_params.list_file,"#image_number\ttime\tmean\tmean_soft\tmean_soft_roi1\tmean_soft_roi2\n");
+	g_print("The list will be continuously saved in %s\n",LIST_FILENAME);
+      }
+
     /* We are using a threaded program we must say it to gtk */
     if( ! g_thread_supported() )
       g_thread_init(NULL);
@@ -720,6 +727,10 @@ main( int    argc,
     DestroyMagickWand(camera_params.wand_data.processed_magick_wand);
     DestroyMagickWand(camera_params.wand_data.display_magick_wand);
     MagickWandTerminus();
+
+    if (camera_params.list_file != NULL)
+      fclose(camera_params.list_file);
+
 
     return( 0 );
 }

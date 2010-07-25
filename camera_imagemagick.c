@@ -454,17 +454,29 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
 				    camera_params->list_store_rows,
 				    0, (gint)camera_params->image_number,
 				    1, camera_params->image_time,
-				    2, (gdouble)camera_params->raw_image_mean,
-				    3,(gdouble) mean,
-				    4,(gdouble) mean_roi1,
-				    5,(gdouble) mean_roi2,
+				    2, (gdouble) camera_params->raw_image_mean,
+				    3, (gdouble) mean,
+				    4, (gdouble) mean_roi1,
+				    5, (gdouble) mean_roi2,
 				    -1);
   camera_params->list_store_rows++;
+
+  if (camera_params->list_file != NULL)
+    {
+      fprintf(camera_params->list_file,"%d\t%f\t%f\t%f\t%f\t%f\n",
+	      (gint)camera_params->image_number,
+	      camera_params->image_time,
+	      (gdouble)camera_params->raw_image_mean,
+	      (gdouble)mean,
+	      (gdouble)mean_roi1,
+	      (gdouble)mean_roi2);
+      fflush(camera_params->list_file);
+    }
+
 
   //if we asked for autoscrolling the chart, we do it
   if(camera_params->autoscroll_chart)
   {
-    /* With NULL as iter, we get the number of toplevel nodes. */
     GtkTreePath *path;
     /* Now get a path from the index. */
     path = gtk_tree_path_new_from_indices(camera_params->list_store_rows - 1, -1);

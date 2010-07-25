@@ -33,6 +33,10 @@
 #include <PvRegIo.h>
 #include <wand/MagickWand.h>
 
+
+
+#define LIST_FILENAME "/tmp/camera_interface_list.dat"
+
 /* Convenience macros for obtaining objects from UI file */
 #if 0
 #define CH_GET_OBJECT( builder, name, type, data ) \
@@ -162,6 +166,7 @@ typedef struct magickwand_data_t{
 #define ROI_CLICK_CORNER2 2
 
 typedef struct camera_parameters_t{
+  long start_time;
   //Camera handler
   tPvHandle camera_handler;
   tPvFrame camera_frame;
@@ -199,6 +204,7 @@ typedef struct camera_parameters_t{
   int autoscroll_chart;
   //The last row number
   int list_store_rows;
+  FILE *list_file;
   //Background
   int background_set;
   //The magick wand/imagemagick information
