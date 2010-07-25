@@ -83,7 +83,6 @@ G_MODULE_EXPORT gboolean cb_delete_event( GtkWidget *widget,
   g_print ("delete event occurred\n");
   //We kill the camera thread
   camera_params.camera_thread_shutdown=1;
-  pthread_join(camera_params.camera_thread, NULL);
 
 
   /* Change TRUE to FALSE and the main window will be destroyed with
@@ -701,6 +700,8 @@ main( int    argc,
 
     /* Release gtk's global lock */
     gdk_threads_leave();
+
+    pthread_join(camera_params.camera_thread, NULL);
 
     /* We derease the pixbuf reference counter */
     if(camera_params.raw_image_pixbuff!=NULL)
