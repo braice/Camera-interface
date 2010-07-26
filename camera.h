@@ -105,6 +105,7 @@ typedef struct gui_objects_t{
   GtkWidget *ROI_start_y;
   GtkWidget *Exp_gain;
   GtkWidget *Exp_time;
+  GtkWidget *list_text;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;

@@ -543,7 +543,6 @@ main( int    argc,
     else
       {
 	fprintf(camera_params.list_file,"#image_number\timage_acq_number\ttime\tmean\tmean_soft\tmean_soft_roi1\tmean_soft_roi2\n");
-	g_print("The list will be continuously saved in %s\n",LIST_FILENAME);
       }
 
     /* We are using a threaded program we must say it to gtk */
@@ -626,6 +625,7 @@ main( int    argc,
     GW( Exp_time );
     GW( raw_autosave );
     GW( raw_text );
+    GW( list_text );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -697,6 +697,18 @@ main( int    argc,
         g_warning( "Thread creation error %d", ret );
         return( 1 ); 
     }
+
+    gchar *msg;
+    if (camera_params.list_file == NULL)
+    {
+	msg = g_strdup_printf ("Problem openning %s for writing",LIST_FILENAME);
+    }
+    else
+    {
+	msg = g_strdup_printf ("The list will be continuously saved in %s",LIST_FILENAME);
+    }
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params.objects->list_text)),msg,-1);
+    g_free (msg);
  
     /* Start main loop */
     gtk_main();

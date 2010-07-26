@@ -449,6 +449,7 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
 
 
   /******************** Fill the treeview     **********************/
+  gdk_threads_enter();
   gettimeofday (&tv_before, (struct timezone *) NULL);
   gtk_list_store_insert_with_values(camera_params->objects->statistics_list, NULL,
 				    camera_params->list_store_rows,
@@ -502,7 +503,6 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
 
   msg2 = g_strdup_printf ("Timings (ms):\nBackground\n   %.0f\nLevelling\n   %.0f\nMagnify\n   %.0f\nRotation\n   %.0f\nCut\n   %.0f\nMean\n   %.0f\nList\n   %.0f\n",
 			  time_bg/1000,time_level/1000,time_magnify/1000,time_rot/1000,time_cut/1000,time_mean/1000,time_list/1000);
-  gdk_threads_enter();
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_image_text)),msg,-1);
   gtk_text_buffer_set_text(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->soft_timing_text)),msg2,-1);
   if(msg_bg)
