@@ -93,6 +93,7 @@ char *PvAPIerror_to_str(tPvErr error)
 }
 
 
+
 int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *DisplayName)
 {
   int ret;
@@ -126,7 +127,6 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&camera_params->sensorheight);
   PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
   //We write the info in the text buffer
-
   msg = g_strdup_printf ("Camera : %s\nSensor %ldx%ld %ld bits\nGain %lddB to %lddB", DisplayName,camera_params->sensorwidth,camera_params->sensorheight,camera_params->sensorbits,gainmin,gainmax);
   gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
   g_free (msg);
@@ -501,7 +501,7 @@ void *camera_thread_func(void* arg)
   camera_params= (camera_parameters_t *) arg;
   struct timeval tv;
 
-  tPvCameraInfo   cameraList[MAX_CAMERA_LIST];
+  tPvCameraInfoEx   cameraList[MAX_CAMERA_LIST];
   unsigned long   cameraNum = 0;
   unsigned long   cameraRle;
 
@@ -526,33 +526,74 @@ void *camera_thread_func(void* arg)
       if(!camera_params->camera_connected )
       {
 	// first, get list of reachable cameras.
-	cameraNum = PvCameraList(cameraList,MAX_CAMERA_LIST,NULL);
+	cameraNum = PvCameraListEx(cameraList,MAX_CAMERA_LIST,NULL,(sizeof(tPvCameraInfoEx)));
 
 	// keep how many cameras listed are reachable
 	cameraRle = cameraNum;
 
 	// then we append the list of unreachable cameras.
         if (cameraNum < MAX_CAMERA_LIST)
-            cameraNum += PvCameraListUnreachable(&cameraList[cameraNum], MAX_CAMERA_LIST-cameraNum, NULL);
+	  cameraNum += PvCameraListUnreachableEx(&cameraList[cameraNum], MAX_CAMERA_LIST-cameraNum, NULL,(sizeof(tPvCameraInfoEx)));
 
 
 	add_to_statusbar(camera_params, 1, "We detected %ld Reachable camera%c (%ld total)",cameraRle,cameraRle>1 ? 's':' ',cameraNum);
 	usleep(300000); //just to see the message
-	if(cameraNum)
+
+	if(cameraNum == 1 || (camera_params->choosen_camera > 0))
 	{
 	  struct in_addr addr;
           tPvIpSettings Conf;
           tPvErr lErr;
-            
-	  if((lErr = PvCameraIpSettingsGet(cameraList[0].UniqueId,&Conf)) == ePvErrSuccess)
+	  int camera;
+	  if(cameraNum==1)
+	    camera=0;
+	  else
+	    camera = camera_params->choosen_camera-1;
+
+	  if((lErr = PvCameraIpSettingsGet(cameraList[camera].UniqueId,&Conf)) == ePvErrSuccess)
           {
             addr.s_addr = Conf.CurrentIpAddress;
-	    add_to_statusbar(camera_params, 1, "Camera: %s. Serial %s. Unique ID = % 8ld IP@ = %15s [%s]", cameraList[0].DisplayName,cameraList[0].SerialString, cameraList[0].UniqueId, inet_ntoa(addr), cameraList[0].PermittedAccess & ePvAccessMaster ? "available" : "in use");
+	    add_to_statusbar(camera_params, 1, "Camera: %s Model %s  Part %s. Serial %s. Unique ID = % 8ld IP@ = %15s [%s]",
+			     cameraList[camera].CameraName,
+			     cameraList[camera].ModelName,
+			     cameraList[camera].PartNumber,
+			     cameraList[camera].SerialNumber,
+			     cameraList[camera].UniqueId,
+			     inet_ntoa(addr), 
+			     cameraList[camera].PermittedAccess & ePvAccessMaster ? "available" : "in use");
 
 	    //We init the camera
-	    if(camera_init(camera_params,cameraList[0].UniqueId,cameraList[0].DisplayName))
+	    if(camera_init(camera_params,cameraList[camera].UniqueId,cameraList[camera].CameraName))
 	      continue;
           }
+	}
+	else if((cameraNum > 1) && (camera_params->choosen_camera==0)) //There is several camera connected and the user didn't choosed any
+	{
+	  //We populate the list of the available cameras for the combo box
+	  camera_params->choosen_camera=-1; //set it to -1 to remember that we opened the dialog
+	  gdk_threads_enter();
+	  gtk_list_store_clear ( camera_params->objects->camera_list );
+	  int i_cam;
+	  for(i_cam=0; i_cam < cameraNum; i_cam++)
+	    {
+	      gchar *msg;
+	      msg = g_strdup_printf ("Number: %d   Name: %s   Model: %s   Part: %s",
+			       i_cam+1,
+			       cameraList[i_cam].CameraName,
+			       cameraList[i_cam].ModelName,
+			       cameraList[i_cam].PartNumber);
+	      gtk_list_store_insert_with_values(camera_params->objects->camera_list, NULL,
+						i_cam,
+						0, (gchararray)(msg),
+						-1);
+ g_free (msg);
+
+	    }
+	  //We select a camera
+	  gtk_combo_box_set_active (GTK_COMBO_BOX(camera_params->objects->camera_list_combo),0);
+	  //Several cameras detected, we show the dialog
+	  gtk_widget_show( camera_params->objects->camera_choose_win );
+	  gdk_threads_leave();  
 	}
 	else
 	  usleep(500000); //some waiting 

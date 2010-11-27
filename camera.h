@@ -106,6 +106,8 @@ typedef struct gui_objects_t{
   GtkWidget *Exp_gain;
   GtkWidget *Exp_time;
   GtkWidget *list_text;
+  GtkWidget *camera_choose_win;
+  GtkWidget *camera_list_combo;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -141,6 +143,7 @@ typedef struct gui_objects_t{
   GtkAdjustment *processed_mean_roi2_min_adj;
   GtkAdjustment *processed_mean_roi2_max_adj;
   GtkListStore *statistics_list;
+  GtkListStore *camera_list;
 }gui_objects_t;
 
 #define DIR_CHOOSING_RAW 1
@@ -181,7 +184,11 @@ typedef struct camera_parameters_t{
   //Put this variable to 1 to shutdown the thread for the camera
   int camera_thread_shutdown;
   pthread_t camera_thread;
+  //Is the camera connected
   int camera_connected;
+  //When there is several cameras, the number of the camera choosen by the user
+  //(starts at 1) if -1 dialog open but no camera choosen
+  int choosen_camera;
   //The image number
   long int image_number;
   long int image_acq_number;

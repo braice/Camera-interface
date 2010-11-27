@@ -516,6 +516,23 @@ G_MODULE_EXPORT void  cb_soft_set_bg_clicked(GtkButton *button)
     update_soft_val(&camera_params);    
 }
 
+/******** Camera choosing dialog ***********/
+
+//Callbak when the user confirmed the selected ROI
+G_MODULE_EXPORT void cb_dialog_camera_choose_ok(GtkButton *button)
+{
+  int camera;
+  camera=gtk_combo_box_get_active (GTK_COMBO_BOX(camera_params.objects->camera_list_combo));
+  g_print("---------Choosen camera %d\n",camera);
+  if(camera == -1)
+    camera_params.choosen_camera=1;
+  else
+    camera_params.choosen_camera = camera +1;
+  gtk_widget_hide( camera_params.objects->camera_choose_win );
+}
+
+
+
 int
 main( int    argc,
       char **argv )
@@ -626,6 +643,8 @@ main( int    argc,
     GW( raw_autosave );
     GW( raw_text );
     GW( list_text );
+    GW( camera_choose_win );
+    GW( camera_list_combo );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
@@ -666,6 +685,7 @@ main( int    argc,
 #undef GA
 #define GL( name ) CH_GET_LIST_STORE( builder, name, data )
     GL( statistics_list );
+    GL( camera_list );
 #undef GL
 
     /* Connect signals */

@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk+" version="2.16"/>
   <!-- interface-naming-policy project-wide -->
@@ -18,6 +18,12 @@
       <column type="gdouble"/>
       <!-- column-name Mean_soft_roi2 -->
       <column type="gdouble"/>
+    </columns>
+  </object>
+  <object class="GtkListStore" id="camera_list">
+    <columns>
+      <!-- column-name camera_info -->
+      <column type="gchararray"/>
     </columns>
   </object>
   <object class="GtkWindow" id="main_window">
@@ -111,7 +117,7 @@
                                           <object class="GtkSpinButton" id="ROI_start_x">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_adjust_x</property>
                                             <property name="climb_rate">1</property>
@@ -130,7 +136,7 @@
                                           <object class="GtkSpinButton" id="ROI_width">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_adjust_width</property>
                                             <property name="climb_rate">1</property>
@@ -151,7 +157,7 @@
                                           <object class="GtkSpinButton" id="ROI_start_y">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_adjust_y</property>
                                             <property name="climb_rate">1</property>
@@ -170,7 +176,7 @@
                                           <object class="GtkSpinButton" id="ROI_height">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_adjust_height</property>
                                             <property name="climb_rate">1</property>
@@ -336,7 +342,7 @@
                                       <object class="GtkSpinButton" id="Exp_gain">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="invisible_char">●</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="adjustment">Exp_adj_gain</property>
                                         <property name="snap_to_ticks">True</property>
@@ -364,7 +370,7 @@
                                       <object class="GtkSpinButton" id="Exp_time">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="invisible_char">●</property>
                                         <property name="caps_lock_warning">False</property>
                                         <property name="adjustment">Exp_adj_time</property>
                                         <property name="climb_rate">0.5</property>
@@ -415,7 +421,7 @@
                                       <object class="GtkSpinButton" id="Binning_X">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="invisible_char">●</property>
                                         <property name="adjustment">Bin_X_adj</property>
                                         <signal name="changed" handler="cb_Binning_changed"/>
                                       </object>
@@ -440,7 +446,7 @@
                                       <object class="GtkSpinButton" id="Binning_Y">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="invisible_char">●</property>
                                         <property name="adjustment">Bin_Y_adj</property>
                                         <signal name="changed" handler="cb_Binning_changed"/>
                                       </object>
@@ -548,7 +554,7 @@
                                           <object class="GtkSpinButton" id="trig_framerate">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="adjustment">Trig_framerate_adj</property>
                                             <property name="digits">2</property>
                                             <property name="numeric">True</property>
@@ -638,7 +644,7 @@
                                           <object class="GtkSpinButton" id="trig_mult_nbframes">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="adjustment">Trig_nbframes_adj</property>
                                             <property name="snap_to_ticks">True</property>
                                             <property name="numeric">True</property>
@@ -693,7 +699,7 @@
                                       <object class="GtkSpinButton" id="bytes_per_sec">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="invisible_char">●</property>
                                         <property name="adjustment">Bytes_per_sec_adj</property>
                                         <property name="climb_rate">1000000</property>
                                         <property name="snap_to_ticks">True</property>
@@ -802,7 +808,7 @@
                           <object class="GtkSpinButton" id="min_meanbar_button">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="invisible_char">&#x25CF;</property>
+                            <property name="invisible_char">●</property>
                             <property name="adjustment">min_meanbar</property>
                             <property name="numeric">True</property>
                           </object>
@@ -825,7 +831,7 @@
                           <object class="GtkSpinButton" id="max_meanbar_button">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="invisible_char">&#x25CF;</property>
+                            <property name="invisible_char">●</property>
                             <property name="adjustment">max_meanbar</property>
                             <property name="numeric">True</property>
                           </object>
@@ -1327,7 +1333,7 @@
                               <object class="GtkSpinButton" id="spinbutton3">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">●</property>
                                 <property name="adjustment">processed_mean_min_adj</property>
                               </object>
                               <packing>
@@ -1349,7 +1355,7 @@
                               <object class="GtkSpinButton" id="spinbutton6">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">●</property>
                                 <property name="adjustment">processed_mean_max_adj</property>
                               </object>
                               <packing>
@@ -1371,7 +1377,7 @@
                               <object class="GtkSpinButton" id="spinbutton4">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">●</property>
                                 <property name="adjustment">processed_mean_roi1_min_adj</property>
                               </object>
                               <packing>
@@ -1393,7 +1399,7 @@
                               <object class="GtkSpinButton" id="spinbutton7">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">●</property>
                                 <property name="adjustment">processed_mean_roi1_max_adj</property>
                               </object>
                               <packing>
@@ -1415,7 +1421,7 @@
                               <object class="GtkSpinButton" id="spinbutton5">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">●</property>
                                 <property name="adjustment">processed_mean_roi2_min_adj</property>
                               </object>
                               <packing>
@@ -1437,7 +1443,7 @@
                               <object class="GtkSpinButton" id="spinbutton8">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="invisible_char">&#x25CF;</property>
+                                <property name="invisible_char">●</property>
                                 <property name="adjustment">processed_mean_roi2_max_adj</property>
                               </object>
                               <packing>
@@ -1666,7 +1672,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_strecht_min">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="adjustment">soft_level_min_adj</property>
                                             <signal name="changed" handler="cb_soft_editable_changed"/>
                                           </object>
@@ -1678,7 +1684,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_level_max">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="adjustment">soft_level_max_adj</property>
                                             <signal name="changed" handler="cb_soft_editable_changed"/>
                                           </object>
@@ -1881,7 +1887,7 @@ as background</property>
                                       <object class="GtkSpinButton" id="soft_rotate_angle">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
+                                        <property name="invisible_char">●</property>
                                         <property name="adjustment">soft_angle_adj</property>
                                         <property name="digits">1</property>
                                         <property name="numeric">True</property>
@@ -1994,7 +2000,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_start_x">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_adjust_x</property>
                                             <property name="snap_to_ticks">True</property>
@@ -2013,7 +2019,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_start_y">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_adjust_y</property>
                                             <property name="climb_rate">0.20000000000000001</property>
@@ -2033,7 +2039,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_width">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_adjust_width</property>
                                             <property name="climb_rate">0.20000000000000001</property>
@@ -2055,7 +2061,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_height">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_adjust_height</property>
                                             <property name="climb_rate">0.20000000000000001</property>
@@ -2166,7 +2172,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_mean_start_x1">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_mean_adjust_x1</property>
                                             <property name="snap_to_ticks">True</property>
@@ -2185,7 +2191,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_mean_start_y1">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_mean_adjust_y1</property>
                                             <property name="climb_rate">0.20000000000000001</property>
@@ -2205,7 +2211,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_mean_width1">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_mean_adjust_width1</property>
                                             <property name="climb_rate">0.20000000000000001</property>
@@ -2227,7 +2233,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_mean_height1">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_mean_adjust_height1</property>
                                             <property name="climb_rate">0.20000000000000001</property>
@@ -2366,7 +2372,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_mean_start_x2">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_mean_adjust_x2</property>
                                             <property name="snap_to_ticks">True</property>
@@ -2385,7 +2391,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_mean_start_y2">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_mean_adjust_y2</property>
                                             <property name="climb_rate">0.20000000000000001</property>
@@ -2405,7 +2411,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_mean_width2">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_mean_adjust_width2</property>
                                             <property name="climb_rate">0.20000000000000001</property>
@@ -2427,7 +2433,7 @@ as background</property>
                                           <object class="GtkSpinButton" id="soft_ROI_mean_height2">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
-                                            <property name="invisible_char">&#x25CF;</property>
+                                            <property name="invisible_char">●</property>
                                             <property name="caps_lock_warning">False</property>
                                             <property name="adjustment">ROI_soft_mean_adjust_height2</property>
                                             <property name="climb_rate">0.20000000000000001</property>
@@ -2718,8 +2724,8 @@ as background</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="transient_for">main_window</property>
     <property name="action">save</property>
-    <property name="show_hidden">True</property>
     <property name="do_overwrite_confirmation">True</property>
+    <property name="show_hidden">True</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox3">
         <property name="visible">True</property>
@@ -2782,7 +2788,6 @@ as background</property>
     <property name="type_hint">normal</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="transient_for">main_window</property>
-    <property name="has_separator">False</property>
     <property name="message_type">warning</property>
     <property name="text" translatable="yes">There is no image to save !</property>
     <child internal-child="vbox">
@@ -2828,7 +2833,6 @@ as background</property>
     <property name="window_position">center-on-parent</property>
     <property name="type_hint">normal</property>
     <property name="transient_for">main_window</property>
-    <property name="has_separator">False</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox5">
         <property name="visible">True</property>
@@ -2957,10 +2961,9 @@ region of interest</property>
     <property name="type_hint">normal</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="transient_for">main_window</property>
-    <property name="has_separator">False</property>
     <property name="action">save</property>
-    <property name="show_hidden">True</property>
     <property name="do_overwrite_confirmation">True</property>
+    <property name="show_hidden">True</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox9">
         <property name="visible">True</property>
@@ -3139,5 +3142,119 @@ region of interest</property>
     <property name="upper">100</property>
     <property name="step_increment">10</property>
     <property name="page_increment">100</property>
+  </object>
+  <object class="GtkDialog" id="camera_choose_win">
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">Choose your camera</property>
+    <property name="modal">True</property>
+    <property name="window_position">center-on-parent</property>
+    <property name="icon_name">dialog-warning</property>
+    <property name="type_hint">normal</property>
+    <property name="skip_taskbar_hint">True</property>
+    <property name="skip_pager_hint">True</property>
+    <property name="urgency_hint">True</property>
+    <property name="deletable">False</property>
+    <property name="transient_for">main_window</property>
+    <child internal-child="vbox">
+      <object class="GtkVBox" id="dialog-vbox10">
+        <property name="visible">True</property>
+        <property name="spacing">2</property>
+        <child>
+          <object class="GtkVBox" id="vbox19">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkHBox" id="hbox7">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkImage" id="image1">
+                    <property name="visible">True</property>
+                    <property name="stock">gtk-dialog-warning</property>
+                    <property name="icon-size">5</property>
+                  </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="label28">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Several Cameras were detected
+Please choose the one you want to use</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="padding">5</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="padding">5</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHButtonBox" id="hbuttonbox6">
+                <property name="visible">True</property>
+                <property name="spacing">5</property>
+                <child>
+                  <object class="GtkComboBox" id="camera_list_combo">
+                    <property name="visible">True</property>
+                    <property name="model">camera_list</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="cellrenderertext8"/>
+                      <attributes>
+                        <attribute name="text">0</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="padding">7</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child internal-child="action_area">
+          <object class="GtkHButtonBox" id="dialog-action_area10">
+            <property name="visible">True</property>
+            <property name="layout_style">end</property>
+            <child>
+              <object class="GtkButton" id="camera_choose_ok">
+                <property name="label">gtk-ok</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+                <signal name="clicked" handler="cb_dialog_camera_choose_ok"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="0">camera_choose_ok</action-widget>
+    </action-widgets>
   </object>
 </interface>
