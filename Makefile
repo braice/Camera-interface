@@ -8,7 +8,7 @@ PVAPI_BIN_DIR = camera_sdk/bin-pc/$(CPU)
 PVAPI_LIB_DIR = camera_sdk/lib-pc/$(CPU)
 
 
-CFLAGS = `pkg-config --cflags gtk+-2.0 gmodule-2.0` -D_LINUX -D_$(CPU)  -I$(PVAPI_INC_DIR) `MagickWand-config --cflags`
+CFLAGS = `pkg-config --cflags gtk+-2.0 gmodule-2.0` -DMAGICKCORE_EXCLUDE_DEPRECATED -D_LINUX -D_$(CPU)  -I$(PVAPI_INC_DIR) `MagickWand-config --cflags`
 LIBS   = `pkg-config --libs   gtk+-2.0 gmodule-2.0` -lpthread -lrt -L$(PVAPI_BIN_DIR) -lPvAPI `MagickWand-config --libs`
 DEBUG  = -Wall -g
 OPTS   = -O2
