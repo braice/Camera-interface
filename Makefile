@@ -9,7 +9,11 @@ PVAPI_LIB_DIR = camera_sdk/lib-pc/$(CPU)
 
 
 CFLAGS = `pkg-config --cflags gtk+-2.0 gmodule-2.0` -DMAGICKCORE_EXCLUDE_DEPRECATED -D_LINUX -D_$(CPU)  -I$(PVAPI_INC_DIR) `MagickWand-config --cflags`
-LIBS   = `pkg-config --libs   gtk+-2.0 gmodule-2.0` -lpthread -lrt -L$(PVAPI_BIN_DIR) -landor -lPvAPI `MagickWand-config --libs`
+LIBS   = `pkg-config --libs   gtk+-2.0 gmodule-2.0` -lpthread -lrt -L$(PVAPI_BIN_DIR) -lPvAPI 
+ifndef FAKE_ANDORLIB
+  LIBS += -landor
+endif
+LIBS += `MagickWand-config --libs`
 DEBUG  = -Wall -g
 OPTS   = -O2
 
