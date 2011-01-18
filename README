@@ -3,3 +3,6 @@ This packages needs
 build-essentiall
 libgraphicsmagick1-dev
 libmagick9-dev
+
+To compile without andor SDK installed type : 
+make FAKE_ANDORLIB=1

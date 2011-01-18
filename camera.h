@@ -108,6 +108,8 @@ typedef struct gui_objects_t{
   GtkWidget *list_text;
   GtkWidget *camera_choose_win;
   GtkWidget *camera_list_combo;
+  GtkWidget *trig_framerate;
+  GtkWidget *net_expander;
   GtkAdjustment *Exp_adj_gain;
   GtkAdjustment *Exp_adj_time;
   GtkAdjustment *ROI_adjust_x;
@@ -169,9 +171,14 @@ typedef struct magickwand_data_t{
 #define ROI_CLICK_CORNER1 1
 #define ROI_CLICK_CORNER2 2
 
+#define CAMERA_GIGE 1
+#define CAMERA_ANDOR 2
+
 typedef struct camera_parameters_t{
+  int type; // kind of camera (Andor or GigE)
   long start_time;
   //Camera handler
+  long andor_handler;
   tPvHandle camera_handler;
   tPvFrame camera_frame;
   //PixBuff
@@ -206,6 +213,8 @@ typedef struct camera_parameters_t{
   int roi_hard_clicking; //Are we selecting the ROI on the image
   int roi_hard_X_lastimage;
   int roi_hard_Y_lastimage;
+  int roi_hard_width;
+  int roi_hard_height;
   //Binning
   int binning_x;
   int binning_y;
@@ -240,6 +249,7 @@ typedef struct camera_parameters_t{
 
 void *camera_thread_func(void* arg);
 void camera_update_roi(camera_parameters_t* );
+void camera_update_binning(camera_parameters_t* );
 void camera_set_exposure(camera_parameters_t* camera_params);
 void camera_set_triggering(camera_parameters_t* camera_params);
 void camera_reset_roi(camera_parameters_t* camera_params);

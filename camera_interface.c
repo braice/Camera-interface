@@ -218,14 +218,10 @@ G_MODULE_EXPORT void cb_BytesPerSecond_changed( GtkEditable *editable, gpointer 
 }
 
 
-//Callback for the bytespersecond values changed
+//Callback for the binning values changed
 G_MODULE_EXPORT void cb_Binning_changed( GtkEditable *editable, gpointer   data )
 {
-
-  camera_params.binning_x=(int)gtk_adjustment_get_value(camera_params.objects->Bin_X_adj);
-  camera_params.binning_y=(int)gtk_adjustment_get_value(camera_params.objects->Bin_Y_adj);
-  PvAttrUint32Set(camera_params.camera_handler,"BinningX",camera_params.binning_x);
-  PvAttrUint32Set(camera_params.camera_handler,"BinningY",camera_params.binning_y);
+  camera_update_binning(&camera_params);
   camera_update_roi(&camera_params);
 }
 
@@ -234,7 +230,8 @@ G_MODULE_EXPORT void cb_Exposure_changed( GtkEditable *editable, gpointer   data
 { 
   gtk_spin_button_update (GTK_SPIN_BUTTON(camera_params.objects->Exp_time));
   gtk_spin_button_update (GTK_SPIN_BUTTON(camera_params.objects->Exp_gain));
-  camera_set_exposure(&camera_params);
+  if(camera_params.type ==  CAMERA_GIGE) //We set the exposure dynamically only for GiGE Cameras. Andors fails
+    camera_set_exposure(&camera_params);
 }
 
 //Callback for the acquisition button is toggled
@@ -251,12 +248,14 @@ G_MODULE_EXPORT void cb_Acquire_toggled(GtkToggleButton *togglebutton,gpointer  
 //Triggering callbacks
 G_MODULE_EXPORT void cb_trig_toggled(GtkToggleButton *togglebutton,gpointer   data )
 {
-  camera_set_triggering(&camera_params);
+  if(camera_params.type ==  CAMERA_GIGE)
+    camera_set_triggering(&camera_params);
 }
 
 G_MODULE_EXPORT void cb_trig_changed( GtkEditable *editable, gpointer   data )
 {
-  camera_set_triggering(&camera_params);
+  if(camera_params.type ==  CAMERA_GIGE)
+    camera_set_triggering(&camera_params);
 }
 
 
@@ -645,6 +644,8 @@ main( int    argc,
     GW( list_text );
     GW( camera_choose_win );
     GW( camera_list_combo );
+    GW( trig_framerate );
+    GW( net_expander );
 #undef GW
     /* Get adjustments objects from UI */
 #define GA( name ) CH_GET_ADJUSTMENT( builder, name, data )
