@@ -264,28 +264,12 @@ void imagemagick_process_image(camera_parameters_t* camera_params)
 
 
   /********* Level ****************/
-  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autolevel))==FALSE)
-  {
     gettimeofday (&tv_before, (struct timezone *) NULL);
     //MagickLevelImage(camera_params->wand_data.processed_magick_wand, gtk_adjustment_get_value(camera_params->objects->soft_level_min_adj), 1, gtk_adjustment_get_value(camera_params->objects->soft_level_max_adj));
     imagemagick_levelimage(camera_params->wand_data.processed_magick_wand, gtk_adjustment_get_value(camera_params->objects->soft_level_min_adj), gtk_adjustment_get_value(camera_params->objects->soft_level_max_adj));
     gettimeofday (&tv_after, (struct timezone *) NULL);
     time_level = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
-  }
 
-
-  /**************** Auto level and auto gamma ***************/
-  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autolevel))==TRUE)
-  {
-    gettimeofday (&tv_before, (struct timezone *) NULL);
-    MagickAutoLevelImage(camera_params->wand_data.processed_magick_wand);
-    gettimeofday (&tv_after, (struct timezone *) NULL);
-    time_level = (tv_after.tv_sec-tv_before.tv_sec)*1000000+tv_after.tv_usec-tv_before.tv_usec;
-  }
-  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->soft_autogamma))==TRUE)
-  {
-    MagickAutoGammaImage(camera_params->wand_data.processed_magick_wand);
-  }
 
 
   /*************** Software magnification ******************/

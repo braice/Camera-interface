@@ -76,8 +76,6 @@ typedef struct gui_objects_t{
   GtkWidget *acq_toggle;
   GtkWidget *mean_bar;
   GtkWidget *soft_rotate_image;
-  GtkWidget *soft_autolevel;
-  GtkWidget *soft_autogamma;
   GtkWidget *soft_magn_x2;
   GtkWidget *soft_magn_x4;
   GtkWidget *soft_magn_x8;

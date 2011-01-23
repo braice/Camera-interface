@@ -613,8 +613,6 @@ main( int    argc,
     GW( acq_toggle );
     GW( mean_bar );
     GW( soft_rotate_image );
-    GW( soft_autolevel );
-    GW( soft_autogamma );
     GW( soft_magn_x2 );
     GW( soft_magn_x4 );
     GW( soft_magn_x8 );
