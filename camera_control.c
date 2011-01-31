@@ -960,7 +960,7 @@ void *camera_thread_func(void* arg)
 	    }
 
 	}
-	else if((cameraNum > 1) && (camera_params->choosen_camera==0)) //There is several camera connected and the user didn't choosed any
+	else if((cameraTotalNum > 1) && (camera_params->choosen_camera==0)) //There is several camera connected and the user didn't choosed any
 	{
 	  //We populate the list of the available cameras for the combo box
 	  camera_params->choosen_camera=-1; //set it to -1 to remember that we opened the dialog
