@@ -226,7 +226,7 @@ int camera_Andor_init(camera_parameters_t* camera_params, long andor_num)
   min = 10; //we can't ask the camera min and max exposure time, we fix them.
   float f_max;
   GetMaximumExposure(&f_max);
-  gtk_adjustment_set_lower(camera_params->objects->Exp_adj_time,min);
+  gtk_adjustment_set_lower(camera_params->objects->Exp_adj_time,0);
   gtk_adjustment_set_upper(camera_params->objects->Exp_adj_time,f_max*1000);
   gtk_adjustment_set_value(camera_params->objects->Exp_adj_time,100);
   camera_reset_roi(camera_params);
@@ -312,9 +312,9 @@ int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *Di
   gtk_adjustment_set_upper(camera_params->objects->Exp_adj_gain,gainmax);
   gtk_adjustment_set_value(camera_params->objects->Exp_adj_gain,gainmin);
   PvAttrRangeUint32(camera_params->camera_handler,"ExposureValue",&min,&max);
-  gtk_adjustment_set_lower(camera_params->objects->Exp_adj_time,min/1000+1);
+  gtk_adjustment_set_lower(camera_params->objects->Exp_adj_time,0);
   gtk_adjustment_set_upper(camera_params->objects->Exp_adj_time,max/1000);
-  gtk_adjustment_set_value(camera_params->objects->Exp_adj_time,min/1000+1);
+  gtk_adjustment_set_value(camera_params->objects->Exp_adj_time,100);
   camera_reset_roi(camera_params);
   PvAttrRangeUint32(camera_params->camera_handler,"BinningX",&min,&max);
   gtk_adjustment_set_lower(camera_params->objects->Bin_X_adj,min);
@@ -540,8 +540,11 @@ void camera_set_exposure(camera_parameters_t* camera_params)
 {
   if(camera_params->type == CAMERA_GIGE)
     {
+      int exptime;
+      exptime=(int)gtk_adjustment_get_value(camera_params->objects->Exp_adj_time);
+      exptime = exptime == 0 ? 1 : exptime;
       //Set the exposure time
-      PvAttrUint32Set(camera_params->camera_handler,"ExposureValue",(int)gtk_adjustment_get_value(camera_params->objects->Exp_adj_time)*1000);
+      PvAttrUint32Set(camera_params->camera_handler,"ExposureValue",exptime*1000);
       //Set the gain
       PvAttrUint32Set(camera_params->camera_handler,"GainValue",(int)gtk_adjustment_get_value(camera_params->objects->Exp_adj_gain));
     }
@@ -557,6 +560,8 @@ void camera_set_exposure(camera_parameters_t* camera_params)
 	}
       
       time = gtk_adjustment_get_value(camera_params->objects->Exp_adj_time)/1000.;
+      time = time == 0 ? 1./1000. : time;
+
       ret = SetExposureTime(time);
       if(ret!=DRV_SUCCESS)
 	{ 
