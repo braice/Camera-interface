@@ -90,62 +90,6 @@ char *AndorErrorToStr(int error)
   return "Unknown error";
 }
 
-char *PvAPIerror_to_str(tPvErr error)
-{
-  switch(error)
-  {
-  case ePvErrSuccess:
-    return "No Error";
-  case ePvErrCameraFault:
-    return "Unexpected camera fault";
-  case ePvErrInternalFault:
-    return "Unexpected fault in PvApi or driver";
-  case ePvErrBadHandle:
-    return "Camera handle is invalid";
-  case ePvErrBadParameter:
-    return "Bad parameter to API call";
-  case ePvErrBadSequence:
-    return "Sequence of API calls is incorrect";
-  case ePvErrNotFound:
-    return "Camera or attribute not found";
-  case ePvErrAccessDenied:
-    return "Camera cannot be opened in the specified mode";
-  case ePvErrUnplugged:
-    return "Camera was unplugged";
-  case ePvErrInvalidSetup:
-    return "Setup is invalid (an attribute is invalid)";
-  case ePvErrResources:
-    return "System/network resources or memory not available";
-  case ePvErrBandwidth:
-    return "1394 bandwidth not available";
-  case ePvErrQueueFull:
-    return "Too many frames on queue";
-  case ePvErrBufferTooSmall:
-    return "Frame buffer is too small";
-  case ePvErrCancelled:
-    return "Frame cancelled by user";
-  case ePvErrDataLost:
-    return "The data for the frame was lost";
-  case ePvErrDataMissing:
-    return "Some data in the frame is missing";
-  case ePvErrTimeout:
-    return "Timeout during wait";
-  case ePvErrOutOfRange:
-    return "Attribute value is out of the expected range";
-  case ePvErrWrongType:
-    return "Attribute is not this type (wrong access function)";
-  case ePvErrForbidden:
-    return "Attribute write forbidden at this time";
-  case ePvErrUnavailable:
-    return "Attribute is not available at this time";
-  case ePvErrFirewall:
-    return "A firewall is blocking the traffic (Windows only)";
-  case __ePvErr_force_32: //To make the compiler happy
-    return "";
-  }
-  return "Unknown error";
-}
-
 int camera_Andor_init(camera_parameters_t* camera_params, long andor_num)
 {
   //We hide useless buttons
@@ -270,119 +214,6 @@ int camera_Andor_init(camera_parameters_t* camera_params, long andor_num)
   return 0;
 }
 
-int camera_init(camera_parameters_t* camera_params, long int UniqueId , char *DisplayName)
-{
-  int ret;
-  gchar *msg; 
-  g_print("Camera init\n");
-  ret=PvCameraOpen(UniqueId,ePvAccessMaster,&camera_params->camera_handler);
-  if(ret!=ePvErrSuccess)
-  {
-    g_warning("Error while opening the camera : %s",PvAPIerror_to_str(ret));
-    add_to_statusbar(camera_params, 1, "Camera error : %s",PvAPIerror_to_str(ret));
-    usleep(1000000); //some waiting 
-    return 1;
-  }
-  /****************** Camera information getting ************/
-  unsigned long gainmin, gainmax,min,max;
-  gdk_threads_enter();
-  //We set theses ROI to a minimal value
-  gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_width1,1);
-  gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_width2,1);
-  gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_height1,1);
-  gtk_adjustment_set_value(camera_params->objects->ROI_soft_mean_adjust_height2,1);
-  //We fix the things which depends on the sensor depth
-  PvAttrUint32Get(camera_params->camera_handler,"SensorBits",&camera_params->sensorbits);
-  gtk_adjustment_set_upper(camera_params->objects->min_meanbar,1<<((int)camera_params->sensorbits));
-  gtk_adjustment_set_upper(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
-  gtk_adjustment_set_value(camera_params->objects->max_meanbar,1<<((int)camera_params->sensorbits));
-  gtk_adjustment_set_upper(camera_params->objects->soft_level_min_adj,1<<((int)camera_params->sensorbits));
-  gtk_adjustment_set_upper(camera_params->objects->soft_level_max_adj,1<<((int)camera_params->sensorbits));
-  gtk_adjustment_set_value(camera_params->objects->soft_level_max_adj,1<<((int)camera_params->sensorbits));
-  PvAttrUint32Get(camera_params->camera_handler,"SensorWidth",&camera_params->sensorwidth);
-  PvAttrUint32Get(camera_params->camera_handler,"SensorHeight",&camera_params->sensorheight);
-  PvAttrRangeUint32(camera_params->camera_handler,"GainValue",&gainmin,&gainmax);
-  //We write the info in the text buffer
-  msg = g_strdup_printf ("Camera : %s\nSensor %ldx%ld %ld bits\nGain %lddB to %lddB", DisplayName,camera_params->sensorwidth,camera_params->sensorheight,camera_params->sensorbits,gainmin,gainmax);
-  gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
-  g_free (msg);
-
-  //we set the min/max for the adjustments
-  gtk_adjustment_set_lower(camera_params->objects->Exp_adj_gain,gainmin);
-  gtk_adjustment_set_upper(camera_params->objects->Exp_adj_gain,gainmax);
-  gtk_adjustment_set_value(camera_params->objects->Exp_adj_gain,gainmin);
-  PvAttrRangeUint32(camera_params->camera_handler,"ExposureValue",&min,&max);
-  gtk_adjustment_set_lower(camera_params->objects->Exp_adj_time,0);
-  gtk_adjustment_set_upper(camera_params->objects->Exp_adj_time,max/1000);
-  gtk_adjustment_set_value(camera_params->objects->Exp_adj_time,100);
-  camera_reset_roi(camera_params);
-  PvAttrRangeUint32(camera_params->camera_handler,"BinningX",&min,&max);
-  gtk_adjustment_set_lower(camera_params->objects->Bin_X_adj,min);
-  gtk_adjustment_set_upper(camera_params->objects->Bin_X_adj,max);
-  gtk_adjustment_set_value(camera_params->objects->Bin_X_adj,min);
-  PvAttrRangeUint32(camera_params->camera_handler,"BinningY",&min,&max);
-  gtk_adjustment_set_lower(camera_params->objects->Bin_Y_adj,min);
-  gtk_adjustment_set_upper(camera_params->objects->Bin_Y_adj,max);
-  gtk_adjustment_set_value(camera_params->objects->Bin_Y_adj,min);
-  PvAttrRangeUint32(camera_params->camera_handler,"StreamBytesPerSecond",&min,&max);
-  gtk_adjustment_set_lower(camera_params->objects->Bytes_per_sec_adj,min);
-  gtk_adjustment_set_upper(camera_params->objects->Bytes_per_sec_adj,max);
-  if((min<12000000) && (12000000<max))
-    gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,12000000);
-  else
-    gtk_adjustment_set_value(camera_params->objects->Bytes_per_sec_adj,min);
-  PvAttrRangeUint32(camera_params->camera_handler,"AcquisitionFrameCount",&min,&max);
-  gtk_adjustment_set_lower(camera_params->objects->Trig_nbframes_adj,min);
-  gtk_adjustment_set_upper(camera_params->objects->Trig_nbframes_adj,max);
-  gtk_adjustment_set_value(camera_params->objects->Trig_nbframes_adj,min);
-  tPvFloat32 fmin,fmax;
-  PvAttrRangeFloat32(camera_params->camera_handler,"FrameRate",&fmin,&fmax);
-  gtk_adjustment_set_lower(camera_params->objects->Trig_framerate_adj,fmin);
-  gtk_adjustment_set_upper(camera_params->objects->Trig_framerate_adj,fmax);
-  gtk_adjustment_set_value(camera_params->objects->Trig_framerate_adj,fmin);
-  gdk_threads_leave();
-  
-  /********************* Camera INIT *******************/
-  //Now we adjust the packet size
-  if(!(ret=PvCaptureAdjustPacketSize(camera_params->camera_handler,9000)))
-  {
-    unsigned long Size;
-    PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);
-    PvAttrUint32Set(camera_params->camera_handler,"PacketSize",Size);
-    PvAttrUint32Get(camera_params->camera_handler,"PacketSize",&Size);
-    gdk_threads_enter();
-
-    msg = g_strdup_printf ("\nPacket size: %lu",Size);
-    gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer (GTK_TEXT_VIEW (camera_params->objects->camera_text)),msg,-1);
-    g_free (msg);
-    gdk_threads_leave();
-
-  }
-  else 
-    g_print("Error while setting the packet size: %s\n",PvAPIerror_to_str(ret));
-  //We adjudst the bandwith control mode
-  if(PvAttrStringSet(camera_params->camera_handler,"BandwidthCtrlMode","StreamBytesPerSecond"))
-    g_print("Error while setting the Bandwidth control mode\n");
-  //We set the gain to manual
-  if(PvAttrStringSet(camera_params->camera_handler,"GainMode","Manual"))
-    g_print("Error while setting the gain mode\n");
-  //Exposure mode manual
-  if(PvAttrStringSet(camera_params->camera_handler,"ExposureMode","Manual"))
-    g_print("Error while setting the exposure mode\n");
-  //PixelFormat Monochrome 16 bits
-  if(PvAttrStringSet(camera_params->camera_handler,"PixelFormat","Mono16"))
-    g_print("Error while setting the PixelFormat\n");
-  
-  //We have a good camera handler, we set the camera as being connected
-  camera_params->camera_connected=1;
-  /********************* End of Camera INIT *******************/
-
-  g_print("End of Camera inint\n");
-
-  return 0;
-}
-
-
 
 void camera_update_binning(camera_parameters_t* camera_params)
 {
@@ -391,11 +222,6 @@ void camera_update_binning(camera_parameters_t* camera_params)
   //We don't update when it's 0
   if(!camera_params->binning_x || !camera_params->binning_y)
     return;
-  if(camera_params->type == CAMERA_GIGE)
-    {
-      PvAttrUint32Set(camera_params->camera_handler,"BinningX",camera_params->binning_x);
-      PvAttrUint32Set(camera_params->camera_handler,"BinningY",camera_params->binning_y);
-    }
 
 }
 
@@ -403,39 +229,14 @@ void camera_update_roi(camera_parameters_t* camera_params)
 {
   if(camera_params->roi_hard_active)
   {
-    if(camera_params->type == CAMERA_GIGE)
-      {
-	PvAttrUint32Set(camera_params->camera_handler,"Height",(int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_height));
-	PvAttrUint32Set(camera_params->camera_handler,"RegionX",(int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_x));
-	PvAttrUint32Set(camera_params->camera_handler,"RegionY",(int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_y));
-	PvAttrUint32Set(camera_params->camera_handler,"Width",(int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_width));
-      }
-    else if(camera_params->type == CAMERA_ANDOR)
-      {
-	add_to_statusbar(camera_params, 0, "No Hardware ROI on Andor camera (SDK bug)");
-      }
+      add_to_statusbar(camera_params, 0, "No Hardware ROI on Andor camera (SDK bug)");
     camera_params->roi_hard_width = (int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_width);
     camera_params->roi_hard_height = (int)gtk_adjustment_get_value(camera_params->objects->ROI_adjust_height);
       
   }
   else
     {
-      if(camera_params->type == CAMERA_GIGE)
-       	{
-	  unsigned long min,max;
-	  PvAttrRangeUint32(camera_params->camera_handler,"Height",&min,&max);
-	  PvAttrUint32Set(camera_params->camera_handler,"Height",max);
-	  PvAttrRangeUint32(camera_params->camera_handler,"RegionX",&min,&max);
-	  PvAttrUint32Set(camera_params->camera_handler,"RegionX",min);
-	  PvAttrRangeUint32(camera_params->camera_handler,"RegionY",&min,&max);
-	  PvAttrUint32Set(camera_params->camera_handler,"RegionY",min);
-	  PvAttrRangeUint32(camera_params->camera_handler,"Width",&min,&max);
-	  PvAttrUint32Set(camera_params->camera_handler,"Width",max);
-	}
-      else if(camera_params->type == CAMERA_ANDOR)
-	{
 	  //Nothing to do since we don't set the ROI with this camera
-	}
     }
 }
 
@@ -443,21 +244,7 @@ void camera_stop_grabbing(camera_parameters_t* camera_params)
 {
   int ret=0;
   g_print("camera_stop_grabbing\n");
-  if(camera_params->type == CAMERA_GIGE)
-    {
-      ret=PvCommandRun(camera_params->camera_handler,"AcquisitionStop");
-      if(ret)
-	{
-	  g_print("Error while stopping the acquisition %s\n",PvAPIerror_to_str(ret));
-	  add_to_statusbar(camera_params, 0, "Error while stopping the acquisition %s",PvAPIerror_to_str(ret));
-	}
-      PvCaptureEnd(camera_params->camera_handler);
-      PvCaptureQueueClear(camera_params->camera_handler);
-    }
-  else if(camera_params->type == CAMERA_ANDOR)
-    {
-      AbortAcquisition();
-    }
+  AbortAcquisition();
   //We free the image buffer
   free(camera_params->camera_frame.ImageBuffer);
   camera_params->grabbing_images=0;
@@ -473,133 +260,59 @@ void camera_stop_grabbing(camera_parameters_t* camera_params)
 void camera_set_triggering(camera_parameters_t* camera_params)
 {
   int ret=0;
-  if(camera_params->type == CAMERA_GIGE)
+  if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->ext1_trig))==TRUE)
+    ret = SetTriggerMode(1);
+  else
+    ret = SetTriggerMode(0);
+  if(ret!=DRV_SUCCESS)
     {
-      //We set the trigger soure
-      if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->ext1_trig))==TRUE)
-	{
-	  PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","SyncIn1");
-	  PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerEvent","EdgeRising");
-	}
-      else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->ext2_trig))==TRUE)
-	{
-	  PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","SyncIn2");
-	  PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerEvent","EdgeRising");
-	}
-      else   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->freerun_trig))==TRUE)
-	{
-	  PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","Freerun");
-	}
-      else   if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->framerate_trig))==TRUE)
-	{
-	  PvAttrEnumSet(camera_params->camera_handler,"FrameStartTriggerMode","FixedRate");
-	  ret=PvAttrFloat32Set(camera_params->camera_handler,"FrameRate",gtk_adjustment_get_value(camera_params->objects->Trig_framerate_adj));
-	  if(ret)
-	    g_print("Error %s\n",PvAPIerror_to_str(ret));
-	}
-      else
-	{
-	  g_warning("bug in the trigger back to freerun\n");
-	  PvAttrEnumSet(camera_params->camera_handler, "FrameStartTriggerMode","Freerun");
-	}
-
-
-
-      //We set the framecount/acquisition mode
-      if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->trig_cont))==TRUE)
-	PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "Continuous");
-      else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->trig_single))==TRUE)
-	PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "SingleFrame");
-      else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->trig_mult))==TRUE)
-	{
-	  PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "MultiFrame");
-	  PvAttrUint32Set(camera_params->camera_handler,"AcquisitionFrameCount",(int)gtk_adjustment_get_value(camera_params->objects->Trig_nbframes_adj));
-	}
-      else
-	{
-	  g_warning("bug in the trigger back to continuous\n");
-	  PvAttrEnumSet(camera_params->camera_handler, "AcquisitionMode", "Continuous");
-	}
-    }
-  else if(camera_params->type == CAMERA_ANDOR)
-    {
-      int ret;
-      if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(camera_params->objects->ext1_trig))==TRUE)
-	ret = SetTriggerMode(1);
-      else
-	ret = SetTriggerMode(0);
-      if(ret!=DRV_SUCCESS)
-	{
-	  g_warning("Andor set triggering error : %d %s", ret, AndorErrorToStr(ret));
-	  add_to_statusbar(camera_params, 1, "Andor set triggering error : %d %s", ret, AndorErrorToStr(ret));
-	}
+      g_warning("Andor set triggering error : %d %s", ret, AndorErrorToStr(ret));
+      add_to_statusbar(camera_params, 1, "Andor set triggering error : %d %s", ret, AndorErrorToStr(ret));
     }
 }
 
 void camera_set_exposure(camera_parameters_t* camera_params)
 {
-  if(camera_params->type == CAMERA_GIGE)
+  float time;
+  int ret;
+  int status;
+  GetStatus(&status);
+  if(status==DRV_ACQUIRING)
     {
-      int exptime;
-      exptime=(int)gtk_adjustment_get_value(camera_params->objects->Exp_adj_time);
-      exptime = exptime == 0 ? 1 : exptime;
-      //Set the exposure time
-      PvAttrUint32Set(camera_params->camera_handler,"ExposureValue",exptime*1000);
-      //Set the gain
-      PvAttrUint32Set(camera_params->camera_handler,"GainValue",(int)gtk_adjustment_get_value(camera_params->objects->Exp_adj_gain));
+      return;
     }
-  else if(camera_params->type == CAMERA_ANDOR)
+  
+  time = gtk_adjustment_get_value(camera_params->objects->Exp_adj_time)/1000.;
+  time = time == 0 ? 1./1000. : time;
+  
+  ret = SetExposureTime(time);
+  if(ret!=DRV_SUCCESS)
+    { 
+      g_warning( "Andor : set exposure time. Error : %d %s", ret, AndorErrorToStr(ret));
+    }
+  float exposure;
+  float accumulate;
+  float kinetic;
+  ret = GetAcquisitionTimings(&exposure, &accumulate, &kinetic);
+  if(ret!=DRV_SUCCESS)
+    { 
+      g_warning( "Andor : GetAcquisitionTimings. Error : %d %s", ret, AndorErrorToStr(ret));
+    }
+  else
     {
-      float time;
-      int ret;
-      int status;
-      GetStatus(&status);
-      if(status==DRV_ACQUIRING)
-	{
-	  return;
-	}
-      
-      time = gtk_adjustment_get_value(camera_params->objects->Exp_adj_time)/1000.;
-      time = time == 0 ? 1./1000. : time;
+      g_print( "Andor : asked exposure time %f GetAcquisitionTimings : exposure %f accumulate %f kinetic %f\n",time,exposure,accumulate,kinetic);
+    }
 
-      ret = SetExposureTime(time);
-      if(ret!=DRV_SUCCESS)
-	{ 
-	  g_warning( "Andor : set exposure time. Error : %d %s", ret, AndorErrorToStr(ret));
-	}
-      ret = SetEMCCDGain((int)gtk_adjustment_get_value(camera_params->objects->Exp_adj_gain));
-      if(ret!=DRV_SUCCESS)
-	{ 
-	  g_warning( "Andor : set EMCCD Gain. Error : %d %s", ret, AndorErrorToStr(ret));
-	}
+  ret = SetEMCCDGain((int)gtk_adjustment_get_value(camera_params->objects->Exp_adj_gain));
+  if(ret!=DRV_SUCCESS)
+    { 
+      g_warning( "Andor : set EMCCD Gain. Error : %d %s", ret, AndorErrorToStr(ret));
     }
   
 }
 
 void camera_reset_roi(camera_parameters_t* camera_params)
 {
-  if(camera_params->type == CAMERA_GIGE)
-    {
-      unsigned long min,max;
-      PvAttrRangeUint32(camera_params->camera_handler,"Height",&min,&max);
-      gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_height,min);
-      gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_height,max);
-      gtk_adjustment_set_value(camera_params->objects->ROI_adjust_height,max);
-      PvAttrRangeUint32(camera_params->camera_handler,"RegionX",&min,&max);
-      gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_x,min);
-      gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_x,max);
-      gtk_adjustment_set_value(camera_params->objects->ROI_adjust_x,min);
-      PvAttrRangeUint32(camera_params->camera_handler,"RegionY",&min,&max);
-      gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_y,min);
-      gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_y,max);
-      gtk_adjustment_set_value(camera_params->objects->ROI_adjust_y,min);
-      PvAttrRangeUint32(camera_params->camera_handler,"Width",&min,&max);
-      gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_width,min);
-      gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_width,max);
-      gtk_adjustment_set_value(camera_params->objects->ROI_adjust_width,max);
-    }
-  else if(camera_params->type == CAMERA_ANDOR)
-    {
       int width, height;
       GetDetector(&width,&height);
       gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_height,1);
@@ -614,26 +327,8 @@ void camera_reset_roi(camera_parameters_t* camera_params)
       gtk_adjustment_set_lower(camera_params->objects->ROI_adjust_width,1);
       gtk_adjustment_set_upper(camera_params->objects->ROI_adjust_width,width);
       gtk_adjustment_set_value(camera_params->objects->ROI_adjust_width,width);
-    }
 }
 
-
-void FrameDoneCB(tPvFrame* pFrame)
-{
-  camera_parameters_t* camera_params;
-  camera_params=(camera_parameters_t *)pFrame->Context[0];
-  if(pFrame->Status == ePvErrSuccess)
-    camera_new_image(camera_params);
-  else
-    {
-      if(camera_params->camera_frame.Status!=ePvErrCancelled)
-      {
-	//Error on the frame, we queue another
-	add_to_statusbar(camera_params, 1, "Frame error : %s after frame number %ld",PvAPIerror_to_str(camera_params->camera_frame.Status),camera_params->image_number);
-	PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,FrameDoneCB);
-      }
-    }
-}
 
 
 void camera_update_andor_binning(camera_parameters_t* camera_params)
@@ -668,10 +363,6 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
   //set the ROI
   camera_update_roi(camera_params);
   
-  if(camera_params->type == CAMERA_GIGE)
-    {
-      PvCaptureStart(camera_params->camera_handler);
-    }
   
   //We initialize the frame buffer
   int imageSize;
@@ -682,25 +373,16 @@ void camera_start_grabbing(camera_parameters_t* camera_params)
   camera_params->camera_frame.AncillaryBufferSize=0;
   camera_params->camera_frame.Context[0]=camera_params;
   
-  if(camera_params->type == CAMERA_GIGE)
+  int ret;
+  camera_params->camera_frame.Width = camera_params->sensorwidth;
+  camera_params->camera_frame.Height = camera_params->sensorheight;
+  camera_update_andor_binning(camera_params);
+  ret = StartAcquisition();
+  if(ret != DRV_SUCCESS)
     {
-      PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,FrameDoneCB);
-      
-      PvCommandRun(camera_params->camera_handler, "AcquisitionStart");
-    }
-  else if(camera_params->type == CAMERA_ANDOR)
-    {
-      int ret;
-      camera_params->camera_frame.Width = camera_params->sensorwidth;
-      camera_params->camera_frame.Height = camera_params->sensorheight;
-      camera_update_andor_binning(camera_params);
-      ret = StartAcquisition();
-      if(ret != DRV_SUCCESS)
-	{
-	  add_to_statusbar(camera_params, 1, "An error occured while Starting the acquisition. Error : %d %s",
-			   ret,AndorErrorToStr(ret));
-	  return;
-	}
+      add_to_statusbar(camera_params, 1, "An error occured while Starting the acquisition. Error : %d %s",
+		       ret,AndorErrorToStr(ret));
+      return;
     }
   camera_params->grabbing_images=1;
   add_to_statusbar(camera_params, 1, "Acquisition Started");
@@ -820,21 +502,16 @@ void camera_new_image(camera_parameters_t* camera_params)
   gdk_threads_leave();
 
   //ready for the next one
-  if(camera_params->type == CAMERA_GIGE)
-    PvCaptureQueueFrame(camera_params->camera_handler,&camera_params->camera_frame,FrameDoneCB);
-  else if(camera_params->type == CAMERA_ANDOR)
+  int ret;
+  camera_params->camera_frame.Width = camera_params->sensorwidth;
+  camera_params->camera_frame.Height = camera_params->sensorheight;
+  camera_update_andor_binning(camera_params);
+  ret = StartAcquisition();
+  if(ret != DRV_SUCCESS)
     {
-      int ret;
-      camera_params->camera_frame.Width = camera_params->sensorwidth;
-      camera_params->camera_frame.Height = camera_params->sensorheight;
-      camera_update_andor_binning(camera_params);
-      ret = StartAcquisition();
-      if(ret != DRV_SUCCESS)
-	{
-	  add_to_statusbar(camera_params, 1, "An error occured while Starting the acquisition. Error : %d %s",
-			   ret,AndorErrorToStr(ret));
-	  return;
-	}
+      add_to_statusbar(camera_params, 1, "An error occured while Starting the acquisition. Error : %d %s",
+		       ret,AndorErrorToStr(ret));
+      return;
     }
 }
 
@@ -875,7 +552,6 @@ void *camera_thread_func(void* arg)
   camera_params= (camera_parameters_t *) arg;
   struct timeval tv;
 
-  tPvCameraInfoEx   cameraList[MAX_CAMERA_LIST];
   unsigned long   cameraNum = 0;
   long cameraAndorNum = 0;
   long cameraTotalNum = 0;
@@ -887,12 +563,6 @@ void *camera_thread_func(void* arg)
   camera_params->start_time = tv.tv_sec;
   
   g_print("Camera thread started\n");
-  if((ret=PvInitialize()))
-  {
-    add_to_statusbar(camera_params, 1, "Failed to initialise the Camera API. Error %s", PvAPIerror_to_str(ret));
-    return NULL;
-  }
-  sleep(3);
   while(!camera_params->camera_thread_shutdown) 
   {
     //We loop until the camera is connected
@@ -902,7 +572,7 @@ void *camera_thread_func(void* arg)
       if(!camera_params->camera_connected )
       {
 	// first, get list of reachable cameras.
-	cameraNum = PvCameraListEx(cameraList,MAX_CAMERA_LIST,NULL,(sizeof(tPvCameraInfoEx)));
+	cameraNum = 0;
 	
 	ret = GetAvailableCameras(&cameraAndorNum);
 	if(ret!=DRV_SUCCESS)
@@ -913,11 +583,7 @@ void *camera_thread_func(void* arg)
 	  }
 	
 	// keep how many cameras listed are reachable
-	cameraRle = cameraNum;
-
-	// then we append the list of unreachable cameras.
-        if (cameraNum < MAX_CAMERA_LIST)
-	  cameraNum += PvCameraListUnreachableEx(&cameraList[cameraNum], MAX_CAMERA_LIST-cameraNum, NULL,(sizeof(tPvCameraInfoEx)));
+	cameraRle = 0;
 
 
 	add_to_statusbar(camera_params, 1, "We detected %ld GigE Reachable camera%c (%ld GigE total) and %ld Andor camera%c",
@@ -928,41 +594,17 @@ void *camera_thread_func(void* arg)
 
 	if(cameraTotalNum == 1 || (camera_params->choosen_camera > 0))
 	{
-	  struct in_addr addr;
-          tPvIpSettings Conf;
-          tPvErr lErr;
 	  int camera;
 	  if(cameraTotalNum==1)
 	    camera=0;
 	  else
 	    camera = camera_params->choosen_camera-1;
 	  
-	  if(camera<cameraNum) // So the camera is a GigE
-	    {
-	      if((lErr = PvCameraIpSettingsGet(cameraList[camera].UniqueId,&Conf)) == ePvErrSuccess)
-		{
-		  addr.s_addr = Conf.CurrentIpAddress;
-		  add_to_statusbar(camera_params, 1, "Camera: %s Model %s  Part %s. Serial %s. Unique ID = % 8ld IP@ = %15s [%s]",
-				   cameraList[camera].CameraName,
-				   cameraList[camera].ModelName,
-				   cameraList[camera].PartNumber,
-				   cameraList[camera].SerialNumber,
-				   cameraList[camera].UniqueId,
-				   inet_ntoa(addr), 
-				   cameraList[camera].PermittedAccess & ePvAccessMaster ? "available" : "in use");
-		  
-		  //We init the camera
-		  camera_params->type = CAMERA_GIGE;
-		  if(camera_init(camera_params,cameraList[camera].UniqueId,cameraList[camera].CameraName))
-		    continue;
-		}
-	    }
-	  else // It's an Andor Camera
-	    {
-	      camera_params->type = CAMERA_ANDOR;
-	      if(camera_Andor_init(camera_params, camera - cameraNum))
-		continue;
-	    }
+	  // It's an Andor Camera
+	  camera_params->type = CAMERA_ANDOR;
+	  if(camera_Andor_init(camera_params, camera - cameraNum))
+	    continue;
+	  
 
 	}
 	else if((cameraTotalNum > 1) && (camera_params->choosen_camera==0)) //There is several camera connected and the user didn't choosed any
@@ -972,21 +614,6 @@ void *camera_thread_func(void* arg)
 	  gdk_threads_enter();
 	  gtk_list_store_clear ( camera_params->objects->camera_list );
 	  int i_cam;
-	  for(i_cam=0; i_cam < cameraNum; i_cam++)
-	    {
-	      gchar *msg;
-	      msg = g_strdup_printf ("Number: %d   Name: %s   Model: %s   Part: %s",
-			       i_cam+1,
-			       cameraList[i_cam].CameraName,
-			       cameraList[i_cam].ModelName,
-			       cameraList[i_cam].PartNumber);
-	      gtk_list_store_insert_with_values(camera_params->objects->camera_list, NULL,
-						i_cam,
-						0, (gchararray)(msg),
-						-1);
-	      g_free (msg);
-
-	    }
 	  for(i_cam=0; i_cam < cameraAndorNum; i_cam++)
 	    {
 	      gchar *msg;
@@ -1064,11 +691,8 @@ void *camera_thread_func(void* arg)
        camera_stop_grabbing(camera_params);
   g_print("Camera thread stopping 2\n");
 
-  if(camera_params->camera_connected)
-    PvCameraClose(camera_params->camera_handler);
   // uninit the API
   g_print("Camera thread stopping 3\n");
-  PvUnInitialize();
   gettimeofday (&tv, (struct timezone *) NULL);
 
   g_print("Camera thread stopped after %ld seconds\n", tv.tv_sec-camera_params->start_time);

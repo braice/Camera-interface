@@ -214,7 +214,6 @@ G_MODULE_EXPORT void cb_dialog_cancel_ROI_clicked(GtkButton *button)
 G_MODULE_EXPORT void cb_BytesPerSecond_changed( GtkEditable *editable, gpointer   data )
 {
   //We set the new value on the camera
-  PvAttrUint32Set(camera_params.camera_handler,"StreamBytesPerSecond",(int)gtk_adjustment_get_value(camera_params.objects->Bytes_per_sec_adj));
 }
 
 

@@ -29,8 +29,6 @@
 // We have a thread for controlling the camera
 #include <pthread.h>
 #include <gtk/gtk.h>
-#include <PvApi.h>
-#include <PvRegIo.h>
 #include <wand/MagickWand.h>
 
 
@@ -172,12 +170,52 @@ typedef struct magickwand_data_t{
 #define CAMERA_GIGE 1
 #define CAMERA_ANDOR 2
 
+
+//
+// The frame structure passed to PvQueueFrame().
+//
+typedef struct
+{
+    //----- In -----
+    void*               ImageBuffer;        // Your image buffer
+    unsigned long       ImageBufferSize;    // Size of your image buffer in bytes
+
+    void*               AncillaryBuffer;    // Your buffer to capture associated 
+                                            //   header & trailer data for this image.
+    unsigned long       AncillaryBufferSize;// Size of your ancillary buffer in bytes
+                                            //   (can be 0 for no buffer).
+
+    void*               Context[4];         // For your use (valuable for your
+                                            //   frame-done callback).
+    unsigned long       _reserved1[8];
+
+    //----- Out -----
+
+  int              Status;             // Status of this frame
+
+    unsigned long       ImageSize;          // Image size, in bytes
+    unsigned long       AncillarySize;      // Ancillary data size, in bytes
+
+    unsigned long       Width;              // Image width
+    unsigned long       Height;             // Image height
+    unsigned long       RegionX;            // Start of readout region (left)
+    unsigned long       RegionY;            // Start of readout region (top)
+    unsigned long       BitDepth;           // Number of significant bits
+  
+    unsigned long       FrameCount;         // Rolling frame counter
+    unsigned long       TimestampLo;        // Time stamp, lower 32-bits
+    unsigned long       TimestampHi;        // Time stamp, upper 32-bits
+
+    unsigned long       _reserved2[32];
+
+} tPvFrame;
+
+
 typedef struct camera_parameters_t{
   int type; // kind of camera (Andor or GigE)
   long start_time;
   //Camera handler
   long andor_handler;
-  tPvHandle camera_handler;
   tPvFrame camera_frame;
   //PixBuff
   GdkPixbuf *raw_image_pixbuff; 
